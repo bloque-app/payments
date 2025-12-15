@@ -1,0 +1,30 @@
+{
+  "name": "@bloque/payments-sdk",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rslib build",
+    "dev": "rslib build --watch",
+    "clean": "rm -rf node_modules",
+    "check": "biome check --write",
+    "typecheck": "tsgo --noEmit"
+  },
+  "devDependencies": {
+    "@rslib/core": "^0.18.4",
+    "@types/node": "^24.10.1",
+    "@typescript/native-preview": "catalog:",
+    "typescript": "catalog:"
+  }
+}
