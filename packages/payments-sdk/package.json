@@ -1,7 +1,18 @@
 {
   "name": "@bloque/payments-sdk",
-  "version": "0.0.0",
+  "version": "0.0.1",
+  "description": "SDK for integrating payments into your applications.",
   "type": "module",
+  "keywords": [
+    "bloque",
+    "payments"
+  ],
+  "author": "Nestor Cortina <nexckycort@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -20,6 +31,12 @@
     "clean": "rm -rf node_modules",
     "check": "biome check --write",
     "typecheck": "tsgo --noEmit"
+  },
+  "homepage": "https://www.bloque.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bloque-app/bloque-payments",
+    "directory": "packages/payments-sdk"
   },
   "devDependencies": {
     "@rslib/core": "^0.18.4",
