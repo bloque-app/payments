@@ -1,0 +1,55 @@
+{
+  "name": "@bloque/payments-elements",
+  "version": "0.0.1",
+  "description": "Framework-agnostic Web Components for embedding payment checkouts.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "payments",
+    "checkout",
+    "web-components",
+    "custom-elements",
+    "ui-components",
+    "embed"
+  ],
+  "author": "Nestor Cortina <nexckycort@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "sideEffects": true,
+  "scripts": {
+    "build": "NODE_ENV=production rspack build && tsc --project tsconfig.build.json",
+    "build:watch": "NODE_ENV=development rspack build --watch",
+    "types": "tsc --project tsconfig.build.json"
+  },
+  "homepage": "https://github.com/bloque-app/bloque-payments#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bloque-app/bloque-payments",
+    "directory": "packages/payments-elements"
+  },
+  "dependencies": {
+    "lit": "^3.3.1"
+  },
+  "devDependencies": {
+    "@rspack/cli": "^1.6.7",
+    "@rspack/core": "^1.6.7",
+    "@typescript/native-preview": "catalog:",
+    "minify-html-literals-loader": "^1.1.1",
+    "typescript": "catalog:"
+  }
+}
