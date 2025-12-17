@@ -13,3 +13,17 @@ pre-commit:
       run: bun check {staged_files}
       stage_fixed: true
       fail_text: "Biome check failed for payment sdk"
+
+
+      # TypeScript type checking for payment elements
+    - name: "TypeScript check (payment elements)"
+      root: "packages/payments-elements/"
+      run: bun typecheck
+      fail_text: "TypeScript check failed for payment elements"
+    # Biome linting and formatting for payment elements
+    - name: "Biome check (payment elements)"
+      root: "packages/payments-elements/"
+      glob: "*.{js,ts,jsx,tsx}"
+      run: bun check {staged_files}
+      stage_fixed: true
+      fail_text: "Biome check failed for payment elements"
