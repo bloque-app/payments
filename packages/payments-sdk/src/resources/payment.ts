@@ -5,7 +5,7 @@ import type {
   PaymentResponse,
   PaymentSubmitPayload,
   PSEPaymentFormData,
-} from '../types/payment';
+} from '@bloque/payments-core';
 import { BaseResource } from './base';
 
 export class PaymentResource extends BaseResource {

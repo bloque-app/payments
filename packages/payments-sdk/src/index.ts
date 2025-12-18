@@ -1,3 +1,8 @@
+export type {
+  CreatePaymentParams,
+  PaymentResponse,
+  PaymentSubmitPayload,
+} from '@bloque/payments-core';
 export { Bloque, type BloqueConfig } from './client';
 export type {
   Checkout,
@@ -5,8 +10,3 @@ export type {
   CheckoutParams,
   CheckoutStatus,
 } from './types/checkout';
-export type {
-  CreatePaymentParams,
-  PaymentResponse,
-  PaymentSubmitPayload,
-} from './types/payment';
