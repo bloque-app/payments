@@ -1,15 +1,16 @@
 {
   "name": "bloque-payments",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "author": "Nestor Cortina <nexckycort@gmail.com>",
   "license": "MIT",
   "scripts": {
     "postinstall": "lefthook install",
     "build:foundation": "bun --filter @bloque/payments-core build && bun --filter @bloque/payments-sdk build",
     "build:ui": "bun --filter @bloque/payments-elements build && bun --filter @bloque/payments-react build",
-    "build:packages": "bun run build:foundation && bun run build:ui"
+    "build:packages": "bun run build:foundation && bun run build:ui",
+    "build": "bun run build:packages",
+    "version": "changeset version",
+    "publish": "changeset publish"
   },
   "homepage": "https://github.com/bloque-app/bloque-payments#readme",
   "repository": {
@@ -18,6 +19,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
+    "@changesets/cli": "2.29.8",
     "lefthook": "^2.0.12",
     "typescript": "catalog:"
   },
