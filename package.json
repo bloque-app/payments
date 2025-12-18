@@ -9,13 +9,14 @@
     "build:ui": "bun --filter @bloque/payments-elements build && bun --filter @bloque/payments-react build",
     "build:packages": "bun run build:foundation && bun run build:ui",
     "build": "bun run build:packages",
+    "changeset": "changeset",
     "version": "changeset version",
     "publish": "changeset publish"
   },
-  "homepage": "https://github.com/bloque-app/bloque-payments#readme",
+  "homepage": "git+https://github.com/bloque-app/bloque-payments.git#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bloque-app/bloque-payments"
+    "url": "git+https://github.com/bloque-app/bloque-payments.git"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

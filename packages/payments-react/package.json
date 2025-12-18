@@ -55,10 +55,10 @@
     "react": ">=16.9.0",
     "react-dom": ">=16.9.0"
   },
-  "homepage": "https://github.com/bloque-app/bloque-payments#readme",
+  "homepage": "git+https://github.com/bloque-app/bloque-payments.git#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bloque-app/bloque-payments",
+    "url": "git+https://github.com/bloque-app/bloque-payments.git",
     "directory": "packages/payments-react"
   }
 }

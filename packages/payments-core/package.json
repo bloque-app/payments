@@ -1,6 +1,6 @@
 {
   "name": "@bloque/payments-core",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Core utilities and types for Bloque Payments.",
   "type": "module",
   "keywords": [
@@ -15,10 +15,10 @@
     "access": "public",
     "provenance": true
   },
-  "homepage": "https://github.com/bloque-app/bloque-payments#readme",
+  "homepage": "git+https://github.com/bloque-app/bloque-payments.git#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bloque-app/bloque-payments",
+    "url": "git+https://github.com/bloque-app/bloque-payments.git",
     "directory": "packages/payments-core"
   },
   "exports": {
