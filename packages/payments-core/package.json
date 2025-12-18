@@ -16,11 +16,15 @@
   ],
   "scripts": {
     "build": "rslib build",
-    "dev": "rslib build --watch"
+    "dev": "rslib build --watch",
+    "clean": "rm -rf node_modules",
+    "check": "biome check --write",
+    "typecheck": "tsgo --noEmit"
   },
   "devDependencies": {
     "@rslib/core": "catalog:",
     "@types/node": "catalog:",
+    "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   }
 }
