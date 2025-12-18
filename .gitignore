@@ -6,3 +6,4 @@
 # Dist
 node_modules
 dist/
+doc_build/
