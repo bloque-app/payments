@@ -18,10 +18,10 @@
     "provenance": true
   },
   "sideEffects": true,
-  "homepage": "git+https://github.com/bloque-app/bloque-payments.git#readme",
+  "homepage": "git+https://github.com/bloque-app/payments.git#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bloque-app/bloque-payments.git",
+    "url": "git+https://github.com/bloque-app/payments.git",
     "directory": "packages/payments-elements"
   },
   "exports": {
