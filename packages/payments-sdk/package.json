@@ -1,6 +1,6 @@
 {
   "name": "@bloque/payments",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Official Bloque SDK for creating and managing payments and checkouts.",
   "type": "module",
   "keywords": [
