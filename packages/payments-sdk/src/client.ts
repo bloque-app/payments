@@ -1,12 +1,14 @@
 import { HttpClient } from './http/http-client';
 import { CheckoutResource } from './resources/checkout';
 import { PaymentResource } from './resources/payment';
+import { WebhookResource } from './resources/webhook';
 
 export type BloqueConfig = {
   server: 'sandbox' | 'production';
   apiKey: string;
   timeout?: number;
   maxRetries?: number;
+  webhookSecret?: string;
 };
 
 export class Bloque {
@@ -15,6 +17,7 @@ export class Bloque {
 
   public checkout!: CheckoutResource;
   public payments!: PaymentResource;
+  public webhooks!: WebhookResource;
 
   constructor(config: BloqueConfig) {
     if (!config.apiKey) {
@@ -38,5 +41,6 @@ export class Bloque {
   private initializeResources(): void {
     this.checkout = new CheckoutResource(this.#httpClient);
     this.payments = new PaymentResource(this.#httpClient);
+    this.webhooks = new WebhookResource(this.#config.webhookSecret);
   }
 }

@@ -214,6 +214,59 @@ const checkout = await bloque.checkout.cancel('checkout_id_here');
 
 **Returns**: A `Checkout` object with updated status reflecting the cancellation.
 
+### Webhooks
+
+The webhooks resource allows you to verify the authenticity of webhook events sent from Bloque.
+
+#### Verify Webhook Signature
+
+Verify that a webhook event was actually sent by Bloque using HMAC-SHA256 signature verification.
+
+```typescript
+const isValid = bloque.webhooks.verify(
+  requestBody,
+  signatureHeader,
+  { secret: process.env.WEBHOOK_SECRET }
+);
+
+if (isValid) {
+  // Process the webhook event
+} else {
+  // Reject the webhook
+}
+```
+
+**Parameters**:
+- `body` (string | object): The raw webhook request body
+- `signature` (string): The signature from the `x-bloque-signature` header
+- `options` (optional): Verification options
+  - `secret` (string): Webhook secret key. Can be set during SDK initialization or passed here
+
+**Returns**: `boolean` - `true` if the webhook signature is valid, `false` otherwise
+
+**Configuration**:
+
+You can set the webhook secret during SDK initialization:
+
+```typescript
+const bloque = new Bloque({
+  apiKey: process.env.BLOQUE_API_KEY!,
+  server: 'production',
+  webhookSecret: process.env.BLOQUE_WEBHOOK_SECRET,
+});
+
+// Then you can verify without passing the secret each time
+const isValid = bloque.webhooks.verify(body, signature);
+```
+
+Or pass it directly during verification:
+
+```typescript
+const isValid = bloque.webhooks.verify(body, signature, {
+  secret: process.env.BLOQUE_WEBHOOK_SECRET,
+});
+```
+
 ## Examples
 
 ### Processing Payments
@@ -345,6 +398,61 @@ async function handlePayment(payload: PaymentSubmitPayload) {
 }
 ```
 
+### Webhook Handler
+
+Handle incoming webhook events from Bloque and verify their authenticity:
+
+```typescript
+import { Bloque } from '@bloque/payments';
+
+// Initialize SDK with webhook secret
+const bloque = new Bloque({
+  apiKey: process.env.BLOQUE_API_KEY!,
+  server: 'production',
+  webhookSecret: process.env.BLOQUE_WEBHOOK_SECRET,
+});
+
+// Webhook endpoint
+app.post(
+  '/webhooks/bloque',
+  (req, res) => {
+    const signature = req.headers['x-bloque-signature'] as string;
+
+    try {
+      // Verify the webhook signature
+      const isValid = bloque.webhooks.verify(req.body.toString(), signature);
+
+      if (!isValid) {
+        return res.status(400).send('Invalid signature');
+      }
+
+      // Parse and process the event
+      const event = JSON.parse(req.body.toString());
+
+      switch (event.type) {
+        case 'checkout.completed':
+          console.log('Checkout completed:', event.data);
+          // Update database, send confirmation, etc.
+          break;
+
+        case 'payment.succeeded':
+          console.log('Payment succeeded:', event.data);
+          break;
+
+        case 'payment.failed':
+          console.log('Payment failed:', event.data);
+          break;
+      }
+
+      res.json({ received: true });
+    } catch (error) {
+      console.error('Webhook error:', error);
+      res.status(400).send('Webhook error');
+    }
+  },
+);
+```
+
 ### Basic Checkout with Single Item
 
 ```typescript
@@ -444,6 +552,8 @@ import type {
   CheckoutStatus,
   CheckoutItem,
   CheckoutParams,
+  // Webhook types
+  WebhookVerifyOptions,
 } from '@bloque/payments';
 
 const item: CheckoutItem = {
@@ -526,8 +636,8 @@ bun run check
 ## Links
 
 - [Homepage](https://www.bloque.app)
-- [GitHub Repository](git+https://github.com/bloque-app/bloque-payments.git)
-- [Issue Tracker](git+https://github.com/bloque-app/bloque-payments.git/issues)
+- [GitHub Repository](git+https://github.com/bloque-app/payments.git)
+- [Issue Tracker](git+https://github.com/bloque-app/payments.git/issues)
 
 ## License
 
