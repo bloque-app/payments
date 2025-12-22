@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloque Payments - Checkout</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f9fafb;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #111827;
+      margin-top: 0;
+    }
+    .payment-info {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 24px;
+    }
+    .payment-info h3 {
+      margin: 0 0 8px 0;
+      color: #166534;
+    }
+    .payment-info pre {
+      background: white;
+      padding: 12px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Bloque Payments</h1>
+
+    <!-- Ejemplo 1: Todos los métodos (por defecto) -->
+    <h2 style="margin-top: 32px; font-size: 16px; color: #6b7280;">Ejemplo 1: Todos los métodos</h2>
+    <bloque-checkout id="checkout1"></bloque-checkout>
+
+    <div class="payment-info" id="paymentInfo1" style="display: none;">
+      <h3>✅ Datos de pago recibidos</h3>
+      <pre id="paymentData1"></pre>
+    </div>
+
+    <!-- Ejemplo 2: Solo tarjeta -->
+    <h2 style="margin-top: 48px; font-size: 16px; color: #6b7280;">Ejemplo 2: Solo tarjeta</h2>
+    <bloque-checkout id="checkout2"></bloque-checkout>
+
+    <div class="payment-info" id="paymentInfo2" style="display: none;">
+      <h3>✅ Datos de pago recibidos</h3>
+      <pre id="paymentData2"></pre>
+    </div>
+
+    <!-- Ejemplo 3: Tarjeta y PSE -->
+    <h2 style="margin-top: 48px; font-size: 16px; color: #6b7280;">Ejemplo 3: Tarjeta y PSE</h2>
+    <bloque-checkout id="checkout3"></bloque-checkout>
+
+    <div class="payment-info" id="paymentInfo3" style="display: none;">
+      <h3>✅ Datos de pago recibidos</h3>
+      <pre id="paymentData3"></pre>
+    </div>
+  </div>
+
+  <script type="module">
+    // Configurar ejemplo 1: Todos los métodos (por defecto)
+    const checkout1 = document.getElementById('checkout1');
+    const paymentInfo1 = document.getElementById('paymentInfo1');
+    const paymentData1 = document.getElementById('paymentData1');
+
+    checkout1.addEventListener('payment-submitted', (e) => {
+      console.log('Payment 1 submitted:', e.detail);
+      paymentData1.textContent = JSON.stringify(e.detail, null, 2);
+      paymentInfo1.style.display = 'block';
+      paymentInfo1.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    // Configurar ejemplo 2: Solo tarjeta
+    const checkout2 = document.getElementById('checkout2');
+    const paymentInfo2 = document.getElementById('paymentInfo2');
+    const paymentData2 = document.getElementById('paymentData2');
+
+    checkout2.availableMethods = ['card'];
+
+    checkout2.addEventListener('payment-submitted', (e) => {
+      console.log('Payment 2 submitted:', e.detail);
+      paymentData2.textContent = JSON.stringify(e.detail, null, 2);
+      paymentInfo2.style.display = 'block';
+      paymentInfo2.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    // Configurar ejemplo 3: Tarjeta y PSE
+    const checkout3 = document.getElementById('checkout3');
+    const paymentInfo3 = document.getElementById('paymentInfo3');
+    const paymentData3 = document.getElementById('paymentData3');
+
+    checkout3.availableMethods = ['card', 'pse'];
+
+    checkout3.addEventListener('payment-submitted', (e) => {
+      console.log('Payment 3 submitted:', e.detail);
+      paymentData3.textContent = JSON.stringify(e.detail, null, 2);
+      paymentInfo3.style.display = 'block';
+      paymentInfo3.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  </script>
+</body>
+</html>

@@ -45,6 +45,7 @@
     "build:watch": "NODE_ENV=development rspack build --watch",
     "clean": "rm -rf node_modules && rm -rf dist",
     "check": "biome check --write",
+    "dev": "rsbuild dev --open",
     "typecheck": "tsgo --noEmit",
     "types": "tsc --project tsconfig.build.json"
   },
@@ -53,6 +54,7 @@
     "lit": "^3.3.1"
   },
   "devDependencies": {
+    "@rsbuild/core": "catalog:",
     "@rspack/cli": "^1.6.7",
     "@rspack/core": "^1.6.7",
     "@typescript/native-preview": "catalog:",
