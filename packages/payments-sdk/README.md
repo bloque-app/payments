@@ -24,7 +24,7 @@ import { Bloque, type PaymentSubmitPayload } from '@bloque/payments';
 // Initialize the SDK (server-side only)
 const bloque = new Bloque({
   apiKey: process.env.BLOQUE_API_KEY!,
-  server: 'production', // or 'sandbox' for testing
+  mode: 'production', // or 'sandbox' for testing
 });
 
 app.post('/api/payments', async (req, res) => {
@@ -251,7 +251,7 @@ You can set the webhook secret during SDK initialization:
 ```typescript
 const bloque = new Bloque({
   apiKey: process.env.BLOQUE_API_KEY!,
-  server: 'production',
+  mode: 'production',
   webhookSecret: process.env.BLOQUE_WEBHOOK_SECRET,
 });
 
@@ -277,7 +277,7 @@ import { Bloque, type PaymentSubmitPayload } from '@bloque/payments';
 // Initialize SDK with your API key
 const bloque = new Bloque({
   apiKey: process.env.BLOQUE_API_KEY!,
-  server: 'production',
+  mode: 'production',
 });
 
 // API endpoint handler
@@ -408,7 +408,7 @@ import { Bloque } from '@bloque/payments';
 // Initialize SDK with webhook secret
 const bloque = new Bloque({
   apiKey: process.env.BLOQUE_API_KEY!,
-  server: 'production',
+  mode: 'production',
   webhookSecret: process.env.BLOQUE_WEBHOOK_SECRET,
 });
 

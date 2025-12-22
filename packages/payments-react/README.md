@@ -70,7 +70,7 @@ import { Bloque } from '@bloque/payments';
 
 const bloque = new Bloque({
   apiKey: process.env.BLOQUE_API_KEY!,
-  server: 'production',
+  mode: 'production',
 });
 
 app.post('/api/payments', async (req, res) => {
@@ -278,7 +278,7 @@ import { Bloque } from '@bloque/payments';
 
 const bloque = new Bloque({
   apiKey: process.env.BLOQUE_API_KEY!,
-  server: 'production',
+  mode: 'production',
 });
 
 app.post('/api/payments', async (req, res) => {

@@ -4,7 +4,7 @@ import { PaymentResource } from './resources/payment';
 import { WebhookResource } from './resources/webhook';
 
 export type BloqueConfig = {
-  server: 'sandbox' | 'production';
+  mode: 'sandbox' | 'production';
   apiKey: string;
   timeout?: number;
   maxRetries?: number;
@@ -27,7 +27,7 @@ export class Bloque {
 
     this.#httpClient = new HttpClient({
       baseURL:
-        this.#config.server === 'sandbox'
+        this.#config.mode === 'sandbox'
           ? 'https://dev.bloque.app/api/payments'
           : 'https://api.bloque.app/api/payments',
       apiKey: this.#config.apiKey,

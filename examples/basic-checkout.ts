@@ -2,7 +2,7 @@ import { Bloque } from '../packages/payments-sdk/src';
 
 async function main() {
   const bloque = new Bloque({
-    server: 'sandbox',
+    mode: 'sandbox',
     apiKey: 'your-api-key-here',
   });
 
