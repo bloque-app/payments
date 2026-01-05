@@ -19,6 +19,12 @@ export class CardPaymentForm extends LitElement {
   @property({ type: Boolean })
   requireEmail = false;
 
+  @property({ type: Number })
+  amount?: number;
+
+  @property({ type: String })
+  currency?: string;
+
   static styles = css`
     :host {
       display: block;
@@ -111,6 +117,17 @@ export class CardPaymentForm extends LitElement {
       transform: translateY(-50%);
     }
 
+    .card-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 32px;
+      height: 24px;
+      color: #9ca3af;
+      pointer-events: none;
+    }
+
     .input-wrapper {
       position: relative;
     }
@@ -122,14 +139,41 @@ export class CardPaymentForm extends LitElement {
     return groups.join(' ');
   }
 
-  private detectCardBrand(number: string): string {
-    const cleaned = number.replace(/\s/g, '');
-    if (cleaned.startsWith('4')) return '💳'; // Visa
-    if (cleaned.startsWith('5') && cleaned[1] >= '1' && cleaned[1] <= '5')
-      return '💳'; // Mastercard
-    if (cleaned.startsWith('3') && (cleaned[1] === '4' || cleaned[1] === '7'))
-      return '💳'; // Amex
-    return '';
+  private formatAmount(): string {
+    if (!this.amount || !this.currency) return '';
+
+    const decimalCurrencies = ['USD', 'EUR', 'GBP'];
+    const decimals = decimalCurrencies.includes(this.currency.toUpperCase())
+      ? 2
+      : 0;
+
+    const formatter = new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: this.currency,
+      currencyDisplay: 'code',
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+
+    return formatter.format(this.amount);
+  }
+
+  private renderCardIcon() {
+    return html`
+      <svg
+        class="card-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+        <line x1="1" y1="10" x2="23" y2="10"></line>
+      </svg>
+    `;
   }
 
   private handleCardNumberInput(e: Event) {
@@ -140,11 +184,27 @@ export class CardPaymentForm extends LitElement {
     this.validateField('cardNumber', cleaned);
   }
 
-  private handleExpiryInput(field: 'expiryMonth' | 'expiryYear', e: Event) {
+  private handleExpiryInput(e: Event) {
     const input = e.target as HTMLInputElement;
-    const value = input.value.replace(/\D/g, '');
-    this.formData[field] = value;
-    this.validateField(field, value);
+    let value = input.value.replace(/\D/g, '');
+
+    value = value.slice(0, 4);
+
+    if (value.length >= 2) {
+      input.value = `${value.slice(0, 2)}/${value.slice(2)}`;
+    } else {
+      input.value = value;
+    }
+
+    this.formData.expiryMonth = value.slice(0, 2);
+    this.formData.expiryYear = value.slice(2, 4);
+
+    if (value.length >= 2) {
+      this.validateField('expiryMonth', this.formData.expiryMonth);
+    }
+    if (value.length === 4) {
+      this.validateField('expiryYear', this.formData.expiryYear);
+    }
   }
 
   private handleCvvInput(e: Event) {
@@ -177,15 +237,23 @@ export class CardPaymentForm extends LitElement {
         break;
       case 'expiryMonth': {
         const month = Number.parseInt(value, 10);
-        if (!value) error = 'Requerido';
-        else if (month < 1 || month > 12) error = 'Mes inválido';
+        if (!value) error = 'Fecha de expiración requerida';
+        else if (month < 1 || month > 12) error = 'Fecha inválida';
         break;
       }
       case 'expiryYear': {
         const year = Number.parseInt(value, 10);
         const currentYear = new Date().getFullYear() % 100;
-        if (!value) error = 'Requerido';
-        else if (year < currentYear) error = 'Año inválido';
+        const month = Number.parseInt(this.formData.expiryMonth, 10);
+        const currentMonth = new Date().getMonth() + 1;
+
+        if (!value) error = 'Fecha de expiración requerida';
+        else if (
+          year < currentYear ||
+          (year === currentYear && month < currentMonth)
+        ) {
+          error = 'Fecha de expiración vencida';
+        }
         break;
       }
       case 'cvv':
@@ -260,13 +328,7 @@ export class CardPaymentForm extends LitElement {
               @input=${this.handleCardNumberInput}
               autocomplete="cc-number"
             />
-            ${
-              this.detectCardBrand(this.formData.cardNumber)
-                ? html`<span class="card-brand">
-                  ${this.detectCardBrand(this.formData.cardNumber)}
-                </span>`
-                : ''
-            }
+            ${this.renderCardIcon()}
           </div>
           ${
             this.errors.cardNumber
@@ -280,7 +342,7 @@ export class CardPaymentForm extends LitElement {
           <input
             id="cardholderName"
             type="text"
-            placeholder="NOMBRE COMPLETO"
+            placeholder="JUAN PÉREZ"
             class=${this.errors.cardholderName ? 'error' : ''}
             @input=${(e: Event) => this.handleInput('cardholderName', e)}
             autocomplete="cc-name"
@@ -297,60 +359,42 @@ export class CardPaymentForm extends LitElement {
 
         <div class="form-row">
           <div class="form-group">
-            <label for="expiryMonth">Mes</label>
+            <label for="expiry">Fecha de expiración</label>
             <input
-              id="expiryMonth"
+              id="expiry"
               type="text"
-              placeholder="MM"
-              maxlength="2"
-              class=${this.errors.expiryMonth ? 'error' : ''}
-              @input=${(e: Event) => this.handleExpiryInput('expiryMonth', e)}
-              autocomplete="cc-exp-month"
+              placeholder="MM/AA"
+              maxlength="5"
+              class=${this.errors.expiryMonth || this.errors.expiryYear ? 'error' : ''}
+              @input=${this.handleExpiryInput}
+              autocomplete="cc-exp"
             />
             ${
-              this.errors.expiryMonth
+              this.errors.expiryMonth || this.errors.expiryYear
                 ? html`<div class="error-message">
-                  ${this.errors.expiryMonth}
+                  ${this.errors.expiryMonth || this.errors.expiryYear}
                 </div>`
                 : ''
             }
           </div>
 
           <div class="form-group">
-            <label for="expiryYear">Año</label>
+            <label for="cvv">CVV</label>
             <input
-              id="expiryYear"
+              id="cvv"
               type="text"
-              placeholder="AA"
-              maxlength="2"
-              class=${this.errors.expiryYear ? 'error' : ''}
-              @input=${(e: Event) => this.handleExpiryInput('expiryYear', e)}
-              autocomplete="cc-exp-year"
+              placeholder="123"
+              maxlength="4"
+              class=${this.errors.cvv ? 'error' : ''}
+              @input=${this.handleCvvInput}
+              autocomplete="cc-csc"
             />
             ${
-              this.errors.expiryYear
-                ? html`<div class="error-message">${this.errors.expiryYear}</div>`
+              this.errors.cvv
+                ? html`<div class="error-message">${this.errors.cvv}</div>`
                 : ''
             }
           </div>
-        </div>
-
-        <div class="form-group">
-          <label for="cvv">CVV</label>
-          <input
-            id="cvv"
-            type="text"
-            placeholder="123"
-            maxlength="4"
-            class=${this.errors.cvv ? 'error' : ''}
-            @input=${this.handleCvvInput}
-            autocomplete="cc-csc"
-          />
-          ${
-            this.errors.cvv
-              ? html`<div class="error-message">${this.errors.cvv}</div>`
-              : ''
-          }
         </div>
 
         ${
@@ -361,7 +405,7 @@ export class CardPaymentForm extends LitElement {
                 <input
                   id="email"
                   type="email"
-                  placeholder="ejemplo@correo.com"
+                  placeholder="example@correo.com"
                   class=${this.errors.email ? 'error' : ''}
                   @input=${(e: Event) => this.handleInput('email', e)}
                   autocomplete="email"
@@ -376,7 +420,9 @@ export class CardPaymentForm extends LitElement {
             : ''
         }
 
-        <button type="submit">Pagar</button>
+        <button type="submit">
+          ${this.amount && this.currency ? `Pagar ${this.formatAmount()}` : 'Pagar'}
+        </button>
       </form>
     `;
   }

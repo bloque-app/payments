@@ -82,6 +82,12 @@
     const paymentInfo1 = document.getElementById('paymentInfo1');
     const paymentData1 = document.getElementById('paymentData1');
 
+    checkout1.config = {
+      payment_methods: ['card', 'pse', 'cash'],
+      amount: 50000,
+      currency: 'COP'
+    };
+
     checkout1.addEventListener('payment-submitted', (e) => {
       console.log('Payment 1 submitted:', e.detail);
       paymentData1.textContent = JSON.stringify(e.detail, null, 2);
@@ -94,7 +100,11 @@
     const paymentInfo2 = document.getElementById('paymentInfo2');
     const paymentData2 = document.getElementById('paymentData2');
 
-    checkout2.availableMethods = ['card'];
+    checkout2.config = {
+      payment_methods: ['card'],
+      amount: 120000,
+      currency: 'COP'
+    };
 
     checkout2.addEventListener('payment-submitted', (e) => {
       console.log('Payment 2 submitted:', e.detail);
@@ -108,7 +118,11 @@
     const paymentInfo3 = document.getElementById('paymentInfo3');
     const paymentData3 = document.getElementById('paymentData3');
 
-    checkout3.availableMethods = ['card', 'pse'];
+    checkout3.config = {
+      payment_methods: ['card', 'pse'],
+      amount: 250000,
+      currency: 'COP'
+    };
 
     checkout3.addEventListener('payment-submitted', (e) => {
       console.log('Payment 3 submitted:', e.detail);
