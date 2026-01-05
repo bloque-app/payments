@@ -1,4 +1,9 @@
-import type { PaymentSubmitPayload } from '@bloque/payments-core';
+import type {
+  CardPaymentFormData,
+  CashPaymentFormData,
+  PaymentSubmitPayload,
+  PSEPaymentFormData,
+} from '@bloque/payments-core';
 import { css, html, LitElement } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import './card-payment-form';
@@ -9,6 +14,7 @@ import type {
   AppearanceConfig,
   CheckoutConfig,
   PaymentMethodType,
+  PaymentResponse,
 } from './types';
 
 export class BloqueCheckout extends LitElement {
@@ -40,7 +46,15 @@ export class BloqueCheckout extends LitElement {
   showMethodSelector = true;
 
   @property({ attribute: false })
-  onSubmit?: (payload: PaymentSubmitPayload) => Promise<void>;
+  onSubmit?: (
+    payload: PaymentSubmitPayload,
+  ) => Promise<PaymentResponse | undefined>;
+
+  @property({ attribute: false })
+  onSuccess?: (response: PaymentResponse) => void;
+
+  @property({ attribute: false })
+  onError?: (error: { message: string; data: unknown; type: string }) => void;
 
   private get effectiveAvailableMethods(): PaymentMethodType[] {
     return this.config?.payment_methods || this.availableMethods;
@@ -197,47 +211,123 @@ export class BloqueCheckout extends LitElement {
     this.error = null;
   }
 
+  private buildCardPayload(data: CardPaymentFormData): Record<string, string> {
+    return {
+      customer_email: data.email || '',
+      number: data.cardNumber,
+      cvc: data.cvv,
+      exp_month: data.expiryMonth,
+      exp_year: data.expiryYear,
+      card_holder: data.cardholderName,
+    };
+  }
+
+  private buildPSEPayload(data: PSEPaymentFormData): Record<string, string> {
+    return {
+      customer_email: data.email,
+      person_type: data.personType,
+      document_type: data.documentType,
+      document_number: data.documentNumber,
+      bank_code: data.bankCode,
+    };
+  }
+
+  private buildCashPayload(data: CashPaymentFormData): Record<string, string> {
+    return {
+      customer_email: data.email,
+      document_type: data.documentType,
+      document_number: data.documentNumber,
+      full_name: data.fullName,
+    };
+  }
+
+  private buildPaymentPayload(
+    payment: PaymentSubmitPayload,
+  ): Record<string, unknown> {
+    switch (payment.type) {
+      case 'card':
+        return this.buildCardPayload(payment.data);
+      case 'pse':
+        return this.buildPSEPayload(payment.data);
+      case 'cash':
+        return this.buildCashPayload(payment.data);
+    }
+  }
+
+  private async sendToAPI(
+    payload: PaymentSubmitPayload,
+  ): Promise<PaymentResponse> {
+    const paymentPayload = this.buildPaymentPayload(payload);
+
+    if (this.config?.webhookUrl) {
+      paymentPayload.webhook_url = this.config.webhookUrl;
+    }
+
+    const response = await fetch(
+      `https://api.bloque.app/api/payments/${payload.type}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentPayload),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `Payment failed with status ${response.status}`,
+      );
+    }
+
+    return response.json();
+  }
+
   private async handlePaymentSubmitted(e: CustomEvent) {
     const { data, type } = e.detail;
+    const payload: PaymentSubmitPayload = { data, type };
 
     this.error = null;
     this.isLoading = true;
 
     try {
-      // Si hay una función onSubmit, ejecutarla
+      let paymentResponse: PaymentResponse | undefined;
+
       if (this.onSubmit) {
-        await this.onSubmit({ data, type });
+        const result = await this.onSubmit(payload);
+        if (result) {
+          paymentResponse = result;
+        }
+      } else {
+        paymentResponse = await this.sendToAPI(payload);
       }
 
-      // Emitir evento de éxito para compatibilidad
-      this.dispatchEvent(
-        new CustomEvent('payment-success', {
-          detail: { data, type },
-          bubbles: true,
-          composed: true,
-        }),
-      );
+      if (this.onSuccess && paymentResponse) {
+        this.onSuccess(paymentResponse);
+      }
     } catch (error) {
-      this.error =
+      const errorMessage =
         error instanceof Error
           ? error.message
           : 'Payment failed. Please try again.';
 
-      // Emitir evento de error
-      this.dispatchEvent(
-        new CustomEvent('payment-error', {
-          detail: { data, type, error: this.error },
-          bubbles: true,
-          composed: true,
-        }),
-      );
+      this.error = errorMessage;
+
+      // Llamar a onError si está definida
+      if (this.onError) {
+        this.onError({
+          message: errorMessage,
+          data,
+          type,
+        });
+      }
     } finally {
       this.isLoading = false;
     }
   }
 
   render() {
-    // Apply dynamic styles
     const style = `
       --bloque-primary-color: ${this.effectivePrimaryColor};
       --bloque-border-radius: ${this.effectiveBorderRadius};

@@ -73,10 +73,18 @@ export interface CheckoutConfig {
   amount?: number;
   currency?: string;
   labels?: CheckoutLabels;
+  webhookUrl?: string;
 }
 
 export interface AppearanceConfig {
   primaryColor?: string;
   borderRadius?: string;
   fontFamily?: string;
+}
+
+export interface PaymentResponse {
+  id: string;
+  status: string;
+  amount: number;
+  currency: string;
 }

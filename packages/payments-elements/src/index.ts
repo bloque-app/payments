@@ -19,5 +19,6 @@ export type {
   CheckoutConfig,
   CheckoutLabels,
   PaymentMethodType,
+  PaymentResponse,
   PSEFormLabels,
 } from './types';
