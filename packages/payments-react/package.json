@@ -1,6 +1,6 @@
 {
   "name": "@bloque/payments-react",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "React wrapper for Bloque payments web components",
   "type": "module",
   "main": "./dist/index.js",
@@ -34,6 +34,8 @@
     "provenance": true
   },
   "scripts": {
+    "prerelease": "bun ../../scripts/prerelease.ts",
+    "release": "bun publish --provenance",
     "build": "rslib build",
     "clean": "rm -rf node_modules && rm -rf dist",
     "check": "biome check --write",

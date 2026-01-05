@@ -2,7 +2,7 @@
   "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "linked": [
+  "fixed": [
     [
       "@bloque/payments-core",
       "@bloque/payments",
@@ -11,5 +11,6 @@
     ]
   ],
   "access": "public",
-  "baseBranch": "main"
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch"
 }

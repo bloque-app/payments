@@ -12,7 +12,7 @@
     "clean": "bun run -r --parallel --filter='./packages/*' clean",
     "changeset": "changeset",
     "version": "changeset version",
-    "publish": "changeset publish"
+    "release": "bun run -r --parallel --filter='./packages/*' release"
   },
   "homepage": "git+https://github.com/bloque-app/payments.git#readme",
   "repository": {

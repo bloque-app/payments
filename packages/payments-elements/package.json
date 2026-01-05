@@ -1,6 +1,6 @@
 {
   "name": "@bloque/payments-elements",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Framework-agnostic Web Components for embedding payment checkouts.",
   "type": "module",
   "keywords": [
@@ -41,6 +41,8 @@
     "node": ">=22"
   },
   "scripts": {
+    "prerelease": "bun ../../scripts/prerelease.ts",
+    "release": "bun publish --provenance",
     "build": "NODE_ENV=production rspack build && tsc --project tsconfig.build.json",
     "build:watch": "NODE_ENV=development rspack build --watch",
     "clean": "rm -rf node_modules && rm -rf dist",
@@ -49,15 +51,13 @@
     "typecheck": "tsgo --noEmit",
     "types": "tsc --project tsconfig.build.json"
   },
-  "dependencies": {
-    "@bloque/payments-core": "workspace:*",
-    "lit": "^3.3.1"
-  },
   "devDependencies": {
+    "@bloque/payments-core": "workspace:*",
     "@rsbuild/core": "catalog:",
     "@rspack/cli": "^1.6.7",
     "@rspack/core": "^1.6.7",
     "@typescript/native-preview": "catalog:",
+    "lit": "^3.3.1",
     "minify-html-literals-loader": "^1.1.1",
     "typescript": "catalog:"
   }
