@@ -3,6 +3,7 @@ import type {
   AppearanceConfig,
   CheckoutConfig,
   PaymentMethodType,
+  PaymentResponse,
   PaymentSubmitPayload,
 } from '@bloque/payments-elements';
 import { useEffect, useRef } from 'react';
@@ -25,9 +26,11 @@ export interface BloqueCheckoutProps {
   availableMethods?: PaymentMethodType[];
   requireEmail?: boolean;
   showMethodSelector?: boolean;
-  onSubmit?: (payload: PaymentSubmitPayload) => Promise<void>;
-  onSuccess?: (event: CustomEvent<PaymentSubmitPayload>) => void;
-  onError?: (event: CustomEvent<PaymentSubmitPayload & { error: string }>) => void;
+  onSubmit?: (
+    payload: PaymentSubmitPayload,
+  ) => Promise<PaymentResponse | undefined>;
+  onSuccess?: (response: PaymentResponse) => void;
+  onError?: (error: { message: string; data: unknown; type: string }) => void;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -45,15 +48,25 @@ export function BloqueCheckout({
   className,
   style,
 }: BloqueCheckoutProps) {
-  const checkoutRef = useRef<HTMLElement & {
-    config?: CheckoutConfig;
-    appearance?: AppearanceConfig;
-    amount?: number;
-    availableMethods?: PaymentMethodType[];
-    requireEmail?: boolean;
-    showMethodSelector?: boolean;
-    onSubmit?: (payload: PaymentSubmitPayload) => Promise<void>;
-  }>(null);
+  const checkoutRef = useRef<
+    HTMLElement & {
+      config?: CheckoutConfig;
+      appearance?: AppearanceConfig;
+      amount?: number;
+      availableMethods?: PaymentMethodType[];
+      requireEmail?: boolean;
+      showMethodSelector?: boolean;
+      onSubmit?: (
+        payload: PaymentSubmitPayload,
+      ) => Promise<PaymentResponse | undefined>;
+      onSuccess?: (response: PaymentResponse) => void;
+      onError?: (error: {
+        message: string;
+        data: unknown;
+        type: string;
+      }) => void;
+    }
+  >(null);
 
   useEffect(() => {
     const element = checkoutRef.current;
@@ -66,28 +79,19 @@ export function BloqueCheckout({
     element.requireEmail = requireEmail;
     element.showMethodSelector = showMethodSelector;
     if (onSubmit) element.onSubmit = onSubmit;
-  }, [config, appearance, amount, availableMethods, requireEmail, showMethodSelector, onSubmit]);
-
-  useEffect(() => {
-    const element = checkoutRef.current;
-    if (!element) return;
-
-    const handleSuccess = (event: Event) => {
-      if (onSuccess) onSuccess(event as CustomEvent);
-    };
-
-    const handleError = (event: Event) => {
-      if (onError) onError(event as CustomEvent);
-    };
-
-    element.addEventListener('payment-success', handleSuccess);
-    element.addEventListener('payment-error', handleError);
-
-    return () => {
-      element.removeEventListener('payment-success', handleSuccess);
-      element.removeEventListener('payment-error', handleError);
-    };
-  }, [onSuccess, onError]);
+    if (onSuccess) element.onSuccess = onSuccess;
+    if (onError) element.onError = onError;
+  }, [
+    config,
+    appearance,
+    amount,
+    availableMethods,
+    requireEmail,
+    showMethodSelector,
+    onSubmit,
+    onSuccess,
+    onError,
+  ]);
 
   return (
     // @ts-expect-error - Custom element types are not fully supported

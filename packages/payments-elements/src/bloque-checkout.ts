@@ -259,6 +259,13 @@ export class BloqueCheckout extends LitElement {
   ): Promise<PaymentResponse> {
     const paymentPayload = this.buildPaymentPayload(payload);
 
+    if (!this.config?.amount) {
+      throw new Error('Amount is required in config');
+    }
+    paymentPayload.amount = this.config.amount;
+
+    paymentPayload.currency = this.config?.currency || 'USD';
+
     if (this.config?.webhookUrl) {
       paymentPayload.webhook_url = this.config.webhookUrl;
     }

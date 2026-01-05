@@ -1,6 +1,7 @@
 export type {
   AppearanceConfig,
   CheckoutConfig,
+  PaymentResponse,
   PaymentSubmitPayload,
 } from '@bloque/payments-elements';
 export type { BloqueCheckoutProps } from './bloque-checkout';

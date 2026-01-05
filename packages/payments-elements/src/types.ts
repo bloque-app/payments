@@ -70,8 +70,8 @@ export interface CheckoutLabels {
 
 export interface CheckoutConfig {
   payment_methods?: PaymentMethodType[];
-  amount?: number;
-  currency?: string;
+  amount: number;
+  currency?: 'USD';
   labels?: CheckoutLabels;
   webhookUrl?: string;
 }
