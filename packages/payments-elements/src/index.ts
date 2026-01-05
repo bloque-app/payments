@@ -14,6 +14,10 @@ export type { PaymentSubmitPayload } from '@bloque/payments-core';
 export { BloqueCheckout } from './bloque-checkout';
 export type {
   AppearanceConfig,
+  CardFormLabels,
+  CashFormLabels,
   CheckoutConfig,
+  CheckoutLabels,
   PaymentMethodType,
+  PSEFormLabels,
 } from './types';

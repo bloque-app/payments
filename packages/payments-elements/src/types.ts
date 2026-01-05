@@ -25,10 +25,54 @@ export const PAYMENT_METHODS: Record<PaymentMethodType, PaymentMethod> = {
   },
 };
 
+export interface CardFormLabels {
+  cardNumber?: string;
+  cardNumberPlaceholder?: string;
+  cardholderName?: string;
+  cardholderNamePlaceholder?: string;
+  expiryDate?: string;
+  expiryDatePlaceholder?: string;
+  cvv?: string;
+  cvvPlaceholder?: string;
+  email?: string;
+  emailPlaceholder?: string;
+  submitButton?: string;
+}
+
+export interface PSEFormLabels {
+  personType?: string;
+  documentType?: string;
+  documentNumber?: string;
+  documentNumberPlaceholder?: string;
+  bank?: string;
+  bankPlaceholder?: string;
+  email?: string;
+  emailPlaceholder?: string;
+  submitButton?: string;
+}
+
+export interface CashFormLabels {
+  fullName?: string;
+  fullNamePlaceholder?: string;
+  documentType?: string;
+  documentNumber?: string;
+  documentNumberPlaceholder?: string;
+  email?: string;
+  emailPlaceholder?: string;
+  submitButton?: string;
+}
+
+export interface CheckoutLabels {
+  card?: CardFormLabels;
+  pse?: PSEFormLabels;
+  cash?: CashFormLabels;
+}
+
 export interface CheckoutConfig {
   payment_methods?: PaymentMethodType[];
   amount?: number;
   currency?: string;
+  labels?: CheckoutLabels;
 }
 
 export interface AppearanceConfig {

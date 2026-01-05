@@ -292,6 +292,7 @@ export class BloqueCheckout extends LitElement {
                           .requireEmail=${this.requireEmail}
                           .amount=${this.config?.amount}
                           .currency=${this.config?.currency}
+                          .labels=${this.config?.labels?.card}
                           @payment-submitted=${this.handlePaymentSubmitted}
                         ></card-payment-form>
                       `

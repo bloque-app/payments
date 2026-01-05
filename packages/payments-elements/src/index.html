@@ -66,8 +66,8 @@
       <pre id="paymentData2"></pre>
     </div>
 
-    <!-- Ejemplo 3: Tarjeta y PSE -->
-    <h2 style="margin-top: 48px; font-size: 16px; color: #6b7280;">Ejemplo 3: Tarjeta y PSE</h2>
+    <!-- Ejemplo 3: Tarjeta y PSE con labels en inglés -->
+    <h2 style="margin-top: 48px; font-size: 16px; color: #6b7280;">Ejemplo 3: Tarjeta y PSE (labels en inglés)</h2>
     <bloque-checkout id="checkout3"></bloque-checkout>
 
     <div class="payment-info" id="paymentInfo3" style="display: none;">
@@ -113,7 +113,7 @@
       paymentInfo2.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
 
-    // Configurar ejemplo 3: Tarjeta y PSE
+    // Configurar ejemplo 3: Tarjeta y PSE (con labels en inglés)
     const checkout3 = document.getElementById('checkout3');
     const paymentInfo3 = document.getElementById('paymentInfo3');
     const paymentData3 = document.getElementById('paymentData3');
@@ -121,7 +121,22 @@
     checkout3.config = {
       payment_methods: ['card', 'pse'],
       amount: 250000,
-      currency: 'COP'
+      currency: 'COP',
+      labels: {
+        card: {
+          cardNumber: 'Card Number',
+          cardNumberPlaceholder: '1234 5678 9012 3456',
+          cardholderName: 'Cardholder Name',
+          cardholderNamePlaceholder: 'JOHN DOE',
+          expiryDate: 'Expiry Date',
+          expiryDatePlaceholder: 'MM/YY',
+          cvv: 'CVV',
+          cvvPlaceholder: '123',
+          email: 'Email',
+          emailPlaceholder: 'example@email.com',
+          submitButton: 'Pay'
+        }
+      }
     };
 
     checkout3.addEventListener('payment-submitted', (e) => {

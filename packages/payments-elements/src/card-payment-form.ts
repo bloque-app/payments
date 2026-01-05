@@ -1,6 +1,7 @@
 import type { CardPaymentFormData } from '@bloque/payments-core';
 import { css, html, LitElement } from 'lit';
 import { property, state } from 'lit/decorators.js';
+import type { CardFormLabels } from './types';
 
 export class CardPaymentForm extends LitElement {
   @state()
@@ -24,6 +25,9 @@ export class CardPaymentForm extends LitElement {
 
   @property({ type: String })
   currency?: string;
+
+  @property({ type: Object })
+  labels?: CardFormLabels;
 
   static styles = css`
     :host {
@@ -156,6 +160,24 @@ export class CardPaymentForm extends LitElement {
     });
 
     return formatter.format(this.amount);
+  }
+
+  private getLabels() {
+    return {
+      cardNumber: this.labels?.cardNumber ?? 'Número de tarjeta',
+      cardNumberPlaceholder:
+        this.labels?.cardNumberPlaceholder ?? '1234 5678 9012 3456',
+      cardholderName: this.labels?.cardholderName ?? 'Nombre del titular',
+      cardholderNamePlaceholder:
+        this.labels?.cardholderNamePlaceholder ?? 'JUAN PÉREZ',
+      expiryDate: this.labels?.expiryDate ?? 'Fecha de expiración',
+      expiryDatePlaceholder: this.labels?.expiryDatePlaceholder ?? 'MM/AA',
+      cvv: this.labels?.cvv ?? 'CVV',
+      cvvPlaceholder: this.labels?.cvvPlaceholder ?? '123',
+      email: this.labels?.email ?? 'Email',
+      emailPlaceholder: this.labels?.emailPlaceholder ?? 'example@correo.com',
+      submitButton: this.labels?.submitButton ?? 'Pagar',
+    };
   }
 
   private renderCardIcon() {
@@ -314,15 +336,17 @@ export class CardPaymentForm extends LitElement {
   }
 
   render() {
+    const labels = this.getLabels();
+
     return html`
       <form class="form-container" @submit=${this.handleSubmit}>
         <div class="form-group">
-          <label for="cardNumber">Número de tarjeta</label>
+          <label for="cardNumber">${labels.cardNumber}</label>
           <div class="input-wrapper">
             <input
               id="cardNumber"
               type="text"
-              placeholder="1234 5678 9012 3456"
+              placeholder=${labels.cardNumberPlaceholder}
               maxlength="19"
               class=${this.errors.cardNumber ? 'error' : ''}
               @input=${this.handleCardNumberInput}
@@ -338,11 +362,11 @@ export class CardPaymentForm extends LitElement {
         </div>
 
         <div class="form-group">
-          <label for="cardholderName">Nombre del titular</label>
+          <label for="cardholderName">${labels.cardholderName}</label>
           <input
             id="cardholderName"
             type="text"
-            placeholder="JUAN PÉREZ"
+            placeholder=${labels.cardholderNamePlaceholder}
             class=${this.errors.cardholderName ? 'error' : ''}
             @input=${(e: Event) => this.handleInput('cardholderName', e)}
             autocomplete="cc-name"
@@ -359,11 +383,11 @@ export class CardPaymentForm extends LitElement {
 
         <div class="form-row">
           <div class="form-group">
-            <label for="expiry">Fecha de expiración</label>
+            <label for="expiry">${labels.expiryDate}</label>
             <input
               id="expiry"
               type="text"
-              placeholder="MM/AA"
+              placeholder=${labels.expiryDatePlaceholder}
               maxlength="5"
               class=${this.errors.expiryMonth || this.errors.expiryYear ? 'error' : ''}
               @input=${this.handleExpiryInput}
@@ -379,11 +403,11 @@ export class CardPaymentForm extends LitElement {
           </div>
 
           <div class="form-group">
-            <label for="cvv">CVV</label>
+            <label for="cvv">${labels.cvv}</label>
             <input
               id="cvv"
               type="text"
-              placeholder="123"
+              placeholder=${labels.cvvPlaceholder}
               maxlength="4"
               class=${this.errors.cvv ? 'error' : ''}
               @input=${this.handleCvvInput}
@@ -401,11 +425,11 @@ export class CardPaymentForm extends LitElement {
           this.requireEmail
             ? html`
               <div class="form-group">
-                <label for="email">Email</label>
+                <label for="email">${labels.email}</label>
                 <input
                   id="email"
                   type="email"
-                  placeholder="example@correo.com"
+                  placeholder=${labels.emailPlaceholder}
                   class=${this.errors.email ? 'error' : ''}
                   @input=${(e: Event) => this.handleInput('email', e)}
                   autocomplete="email"
@@ -421,7 +445,11 @@ export class CardPaymentForm extends LitElement {
         }
 
         <button type="submit">
-          ${this.amount && this.currency ? `Pagar ${this.formatAmount()}` : 'Pagar'}
+          ${
+            this.amount && this.currency
+              ? `${labels.submitButton} ${this.formatAmount()}`
+              : labels.submitButton
+          }
         </button>
       </form>
     `;
