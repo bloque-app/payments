@@ -1,0 +1,397 @@
+# Comenzando
+
+import { PackageManagerTabs } from '@theme';
+
+Comienza a usar Bloque Payments en minutos. Esta guía te llevará a través de la configuración tanto del componente React en el frontend como del SDK en el backend.
+
+## Instalación
+
+### Frontend (React)
+
+Instala el paquete de componentes React:
+
+<PackageManagerTabs command="add @bloque/payments-react" />
+
+### Backend (Node.js/Bun)
+
+Instala el SDK de backend:
+
+<PackageManagerTabs command="add @bloque/payments" />
+
+## Clave API
+
+Para usar Bloque Payments, necesitarás una clave API. Puedes obtener una desde el [Panel de Bloque](https://app.bloque.app/settings/api).
+
+:::warning Seguridad
+Nunca expongas tu clave API en código del lado del cliente. Siempre usa variables de entorno y mantén tus claves seguras en tu backend.
+:::
+
+## Inicio Rápido: Integración Completa
+
+Aquí hay un ejemplo completo que muestra cómo integrar Bloque Payments con React en el frontend y Node.js/Bun en el backend.
+
+### Configuración Frontend (React)
+
+```tsx
+import { BloqueCheckout } from '@bloque/payments-react';
+import type {
+  CheckoutConfig,
+  AppearanceConfig,
+  PaymentResponse,
+} from '@bloque/payments-react';
+
+function CheckoutPage() {
+  // Configuración
+  const config: CheckoutConfig = {
+    payment_methods: ['card', 'pse', 'cash'],
+    amount: 120_000, // Monto en la unidad más pequeña (ej: centavos)
+    currency: 'COP',
+  };
+
+  // Personalización de apariencia
+  const appearance: AppearanceConfig = {
+    primaryColor: '#10b981',
+    borderRadius: '12px',
+    fontFamily: 'Inter, system-ui, sans-serif',
+  };
+
+  // Manejar envío de pago
+  const handleSubmit = async (payload) => {
+    const response = await fetch('/api/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error('Pago fallido');
+    }
+
+    return response.json();
+  };
+
+  return (
+    <BloqueCheckout
+      config={config}
+      appearance={appearance}
+      onSubmit={handleSubmit}
+      onSuccess={(response) => {
+        console.log('¡Pago exitoso!');
+        console.log('ID de Pago:', response.id);
+        console.log('Estado:', response.status);
+        window.location.href = '/success';
+      }}
+      onError={(error) => {
+        console.error('Pago fallido:', error.message);
+        alert(`Pago fallido: ${error.message}`);
+      }}
+    />
+  );
+}
+
+export default CheckoutPage;
+```
+
+### Configuración Backend (Node.js/Bun)
+
+```typescript
+import { Bloque } from '@bloque/payments';
+import express from 'express';
+
+const app = express();
+app.use(express.json());
+
+// Inicializar SDK de Bloque
+const bloque = new Bloque({
+  apiKey: process.env.BLOQUE_API_KEY!,
+  mode: 'production', // o 'sandbox' para pruebas
+});
+
+// Endpoint de pago
+app.post('/api/payments', async (req, res) => {
+  try {
+    const payload = req.body;
+
+    // Procesar pago usando SDK de Bloque
+    const payment = await bloque.payments.create({
+      payment: payload,
+    });
+
+    res.json(payment);
+  } catch (error) {
+    console.error('Error de pago:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+app.listen(3000, () => {
+  console.log('Servidor corriendo en http://localhost:3000');
+});
+```
+
+## Variables de Entorno
+
+Crea un archivo `.env` en tu proyecto backend:
+
+```bash
+# .env
+BLOQUE_API_KEY=tu_clave_api_aqui
+BLOQUE_MODE=sandbox  # o 'production'
+```
+
+Cárgalas en tu aplicación:
+
+```typescript
+import 'dotenv/config';
+
+const bloque = new Bloque({
+  apiKey: process.env.BLOQUE_API_KEY!,
+  mode: process.env.BLOQUE_MODE as 'sandbox' | 'production',
+});
+```
+
+## Opciones de Configuración
+
+### Configuración del SDK
+
+| Opción | Tipo | Requerido | Por Defecto | Descripción |
+|--------|------|-----------|-------------|-------------|
+| `apiKey` | `string` | Sí | - | Tu clave API de Bloque |
+| `mode` | `'production' \| 'sandbox'` | Sí | - | Modo de entorno |
+| `webhookSecret` | `string` | No | - | Secreto para verificación de webhooks |
+
+#### Modos
+
+- **`sandbox`**: Para pruebas y desarrollo. Sin transacciones reales.
+- **`production`**: Para operaciones en vivo con pagos reales.
+
+### Configuración de Checkout
+
+Configura la experiencia de pago:
+
+```typescript
+const config: CheckoutConfig = {
+  payment_methods: ['card', 'pse', 'cash'], // Métodos de pago disponibles
+  amount: 120_000,                           // Monto en la unidad más pequeña
+  currency: 'COP',                           // Código de moneda
+};
+```
+
+### Configuración de Apariencia
+
+Personaliza el look and feel:
+
+```typescript
+const appearance: AppearanceConfig = {
+  primaryColor: '#10b981',                   // Color de marca
+  borderRadius: '12px',                      // Radio de borde para inputs
+  fontFamily: 'Inter, system-ui, sans-serif', // Familia de fuente
+};
+```
+
+## Props del Componente React
+
+### `BloqueCheckout`
+
+| Prop | Tipo | Por Defecto | Descripción |
+|------|------|-------------|-------------|
+| `config` | `CheckoutConfig` | `undefined` | Configuración de pago |
+| `appearance` | `AppearanceConfig` | `undefined` | Personalización de UI |
+| `amount` | `number` | `undefined` | Monto del pago (alternativa a `config.amount`) |
+| `availableMethods` | `PaymentMethodType[]` | `['card', 'pse', 'cash']` | Métodos de pago disponibles |
+| `requireEmail` | `boolean` | `true` | Requerir email para pagos con tarjeta |
+| `showMethodSelector` | `boolean` | `true` | Mostrar selector de método de pago |
+| `onSubmit` | `function` | `undefined` | Llamado cuando el usuario envía el pago |
+| `onSuccess` | `function` | `undefined` | Llamado en pago exitoso |
+| `onError` | `function` | `undefined` | Llamado en error de pago |
+| `className` | `string` | `undefined` | Nombre de clase CSS |
+| `style` | `React.CSSProperties` | `undefined` | Estilos inline |
+
+## Flujo de Pago
+
+Así es como funciona el flujo de pago:
+
+```
+1. Usuario llena formulario de pago en componente React
+   ↓
+2. Componente llama onSubmit con datos de pago
+   ↓
+3. Tu frontend envía datos a tu API backend
+   ↓
+4. Tu backend procesa el pago usando SDK de Bloque
+   ↓
+5. API de Bloque procesa el pago
+   ↓
+6. Respuesta fluye de vuelta al frontend
+   ↓
+7. Se dispara callback onSuccess o onError
+```
+
+## Manejo de Errores
+
+Siempre implementa manejo de errores apropiado:
+
+```tsx
+<BloqueCheckout
+  config={config}
+  onSubmit={async (payload) => {
+    try {
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Pago fallido');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error de pago:', error);
+      throw error;
+    }
+  }}
+  onSuccess={(response) => {
+    // Manejar éxito
+    console.log('Pago exitoso:', response.id);
+    window.location.href = `/success?payment=${response.id}`;
+  }}
+  onError={(error) => {
+    // Manejar error
+    console.error('Pago fallido:', error);
+    alert(`Pago fallido: ${error.message}`);
+  }}
+/>
+```
+
+### Manejo de Errores en Backend
+
+```typescript
+app.post('/api/payments', async (req, res) => {
+  try {
+    const payload = req.body;
+
+    const payment = await bloque.payments.create({
+      payment: payload,
+    });
+
+    res.json(payment);
+  } catch (error) {
+    console.error('Error de procesamiento de pago:', error);
+
+    // Enviar respuesta de error apropiada
+    const statusCode = error.status || 500;
+    res.status(statusCode).json({
+      success: false,
+      error: error.message,
+      code: error.code,
+    });
+  }
+});
+```
+
+## Soporte TypeScript
+
+El SDK está completamente tipado con TypeScript. Importa tipos para mejor experiencia de desarrollo:
+
+```typescript
+import type {
+  BloqueCheckoutProps,
+  CheckoutConfig,
+  AppearanceConfig,
+  PaymentResponse,
+  PaymentSubmitPayload,
+  PaymentMethodType,
+} from '@bloque/payments-react';
+
+// Configuración type-safe
+const config: CheckoutConfig = {
+  payment_methods: ['card', 'pse'],
+  amount: 120_000,
+  currency: 'COP',
+};
+
+// Manejadores de eventos type-safe
+const handleSuccess = (response: PaymentResponse) => {
+  console.log('ID de Pago:', response.id);
+  console.log('Estado:', response.status);
+};
+```
+
+### Tipos de Unión Discriminada
+
+El `PaymentSubmitPayload` usa uniones discriminadas para type safety:
+
+```typescript
+import type { PaymentSubmitPayload } from '@bloque/payments-react';
+
+const handleSubmit = async (payload: PaymentSubmitPayload) => {
+  // TypeScript estrecha el tipo automáticamente
+  switch (payload.type) {
+    case 'card':
+      // payload.data es CardPaymentFormData
+      console.log('Tarjeta terminando en:', payload.data.cardNumber.slice(-4));
+      break;
+    case 'pse':
+      // payload.data es PSEPaymentFormData
+      console.log('Código de banco:', payload.data.bankCode);
+      break;
+    case 'cash':
+      // payload.data es CashPaymentFormData
+      console.log('Cliente:', payload.data.fullName);
+      break;
+  }
+
+  // Enviar al backend...
+};
+```
+
+## Pruebas en Modo Sandbox
+
+Usa modo sandbox para pruebas sin transacciones reales:
+
+```typescript
+// Backend
+const bloque = new Bloque({
+  apiKey: process.env.BLOQUE_API_KEY!,
+  mode: 'sandbox', // Modo de prueba
+});
+```
+
+### Números de Tarjeta de Prueba
+
+Usa estos números de tarjeta de prueba en modo sandbox:
+
+| Número de Tarjeta | Resultado |
+|-------------------|-----------|
+| 4111111111111111 | Éxito |
+| 4000000000000002 | Rechazada |
+| 4000000000000259 | Fondos insuficientes |
+
+## Próximos Pasos
+
+Ahora que tienes la integración básica funcionando, explora más características:
+
+- [Métodos de Pago](/pay/guide/payments/methods) - Aprende sobre pagos con tarjeta, PSE y efectivo
+- [Personalización](/pay/guide/react/customization) - Personaliza la UI para que coincida con tu marca
+- [Webhooks](/pay/guide/webhooks/setup) - Configura webhooks para notificaciones de pago
+- [API de Checkout](/pay/guide/checkout/overview) - Crea páginas de checkout alojadas
+- [Manejo de Errores](/pay/guide/advanced/error-handling) - Maneja errores con gracia
+
+## Ejemplos
+
+Revisa ejemplos completos:
+
+- [Integración React Básica](https://github.com/bloque-app/payments/tree/main/examples/react-basic)
+- [Integración Next.js](https://github.com/bloque-app/payments/tree/main/examples/nextjs)
+- [Backend Express](https://github.com/bloque-app/payments/tree/main/examples/express)
+
+## ¿Necesitas Ayuda?
+
+- [GitHub Issues](https://github.com/bloque-app/payments/issues)
+- [Contactar Soporte](mailto:support@bloque.app)
