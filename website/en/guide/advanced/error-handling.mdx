@@ -1,0 +1,250 @@
+# Error Handling
+
+Learn how to handle errors gracefully in Bloque Payments.
+
+## Error Types
+
+Bloque Payments can return different types of errors:
+
+- **Validation errors**: Invalid input data
+- **Authentication errors**: Invalid or missing API key
+- **Payment errors**: Payment processing failures
+- **Network errors**: Connection issues
+
+## Frontend Error Handling
+
+Use the `onError` callback to handle errors in React:
+
+```tsx
+<BloqueCheckout
+  config={config}
+  onSubmit={handleSubmit}
+  onError={(error) => {
+    console.error('Payment failed:', error.message);
+
+    // Show user-friendly message
+    if (error.type === 'card_declined') {
+      alert('Your card was declined. Please try another payment method.');
+    } else if (error.type === 'insufficient_funds') {
+      alert('Insufficient funds. Please try another card.');
+    } else {
+      alert(`Payment failed: ${error.message}`);
+    }
+  }}
+/>
+```
+
+## Backend Error Handling
+
+Handle errors in your payment endpoint:
+
+```typescript
+app.post('/api/payments', async (req, res) => {
+  try {
+    const payload = req.body;
+
+    const payment = await bloque.payments.create({
+      payment: payload,
+    });
+
+    res.json(payment);
+  } catch (error) {
+    console.error('Payment error:', error);
+
+    // Determine error type
+    if (error.status === 400) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid payment data',
+        message: error.message,
+      });
+    }
+
+    if (error.status === 402) {
+      return res.status(402).json({
+        success: false,
+        error: 'Payment failed',
+        message: error.message,
+        code: error.code,
+      });
+    }
+
+    // Generic error
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+    });
+  }
+});
+```
+
+## Common Error Codes
+
+### Card Errors
+
+- `card_declined`: Card was declined
+- `insufficient_funds`: Not enough funds
+- `invalid_card_number`: Invalid card number
+- `invalid_expiry`: Invalid expiration date
+- `invalid_cvv`: Invalid security code
+
+### PSE Errors
+
+- `bank_unavailable`: Bank system unavailable
+- `transaction_cancelled`: User cancelled transaction
+- `authentication_failed`: Authentication failed
+
+### General Errors
+
+- `invalid_amount`: Invalid payment amount
+- `invalid_currency`: Unsupported currency
+- `expired_checkout`: Checkout session expired
+
+## Retry Logic
+
+Implement retry logic for transient errors:
+
+```typescript
+async function processPaymentWithRetry(payload, maxRetries = 3) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        return response.json();
+      }
+
+      const error = await response.json();
+
+      // Don't retry on validation errors
+      if (response.status === 400) {
+        throw new Error(error.message);
+      }
+
+      lastError = error;
+
+      // Wait before retrying
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      lastError = error;
+    }
+  }
+
+  throw lastError;
+}
+```
+
+## User-Friendly Messages
+
+Provide clear, actionable error messages:
+
+```typescript
+function getErrorMessage(error) {
+  switch (error.code) {
+    case 'card_declined':
+      return 'Your card was declined. Please try another payment method or contact your bank.';
+
+    case 'insufficient_funds':
+      return 'Your card has insufficient funds. Please try another card.';
+
+    case 'invalid_card_number':
+      return 'The card number you entered is invalid. Please check and try again.';
+
+    case 'expired_card':
+      return 'Your card has expired. Please use a different card.';
+
+    case 'invalid_cvv':
+      return 'The security code (CVV) you entered is invalid.';
+
+    case 'bank_unavailable':
+      return 'The selected bank is temporarily unavailable. Please try again later.';
+
+    default:
+      return 'Payment failed. Please try again or contact support.';
+  }
+}
+```
+
+## Complete Error Handling Example
+
+```tsx
+import { BloqueCheckout } from '@bloque/payments-react';
+import { useState } from 'react';
+
+function CheckoutPage() {
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (payload) => {
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Payment failed');
+      }
+
+      return response.json();
+    } catch (err) {
+      console.error('Payment error:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleError = (error) => {
+    console.error('Payment failed:', error);
+    setError(getErrorMessage(error));
+  };
+
+  return (
+    <div>
+      {error && (
+        <div className="error-banner">
+          {error}
+        </div>
+      )}
+
+      <BloqueCheckout
+        config={{
+          payment_methods: ['card', 'pse'],
+          amount: 2999,
+          currency: 'USD',
+        }}
+        onSubmit={handleSubmit}
+        onError={handleError}
+        onSuccess={() => {
+          setError(null);
+          window.location.href = '/success';
+        }}
+      />
+
+      {loading && <div>Processing payment...</div>}
+    </div>
+  );
+}
+```
+
+## Next Steps
+
+- [Webhooks](/pay/guide/webhooks/setup) - Handle payment events
+- [Payment Methods](/pay/guide/payments/methods) - Learn about payment methods

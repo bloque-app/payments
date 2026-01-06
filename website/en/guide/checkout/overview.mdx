@@ -1,0 +1,152 @@
+# Checkout API
+
+The Checkout API allows you to create hosted payment pages for your customers.
+
+## Creating a Checkout
+
+Create a checkout session with items and redirect URLs:
+
+```typescript
+import { Bloque } from '@bloque/payments';
+
+const bloque = new Bloque({
+  apiKey: process.env.BLOQUE_API_KEY!,
+  mode: 'production',
+});
+
+const checkout = await bloque.checkout.create({
+  name: 'React Course',
+  description: 'Learn React from scratch',
+  image_url: 'https://example.com/course.jpg',
+  items: [
+    {
+      name: 'React Course',
+      amount: 2999,
+      quantity: 1,
+      image_url: 'https://example.com/course.jpg',
+    },
+  ],
+  success_url: 'https://yourapp.com/success',
+  cancel_url: 'https://yourapp.com/cancel',
+});
+
+console.log('Checkout URL:', checkout.url);
+// Redirect customer to checkout.url
+```
+
+## Checkout Parameters
+
+### Required Parameters
+
+```typescript
+{
+  name: string;              // Checkout name
+  items: CheckoutItem[];     // Items to purchase
+  success_url: string;       // Redirect URL after success
+  cancel_url: string;        // Redirect URL after cancellation
+}
+```
+
+### Optional Parameters
+
+```typescript
+{
+  description?: string;      // Checkout description
+  image_url?: string;        // Checkout image URL
+  metadata?: Record<string, string | number | boolean>;
+  expires_at?: string;       // Expiration date (ISO 8601)
+}
+```
+
+## Checkout Items
+
+Each item in the checkout:
+
+```typescript
+{
+  name: string;        // Item name
+  amount: number;      // Price in smallest currency unit
+  quantity: number;    // Quantity
+  image_url?: string;  // Item image URL
+}
+```
+
+## Complete Example
+
+```typescript
+const checkout = await bloque.checkout.create({
+  name: 'Shopping Cart',
+  description: 'Your selected items',
+  image_url: 'https://example.com/cart.jpg',
+  items: [
+    {
+      name: 'Wireless Mouse',
+      amount: 999,
+      quantity: 1,
+      image_url: 'https://example.com/mouse.jpg',
+    },
+    {
+      name: 'USB Cable',
+      amount: 499,
+      quantity: 2,
+      image_url: 'https://example.com/cable.jpg',
+    },
+  ],
+  success_url: 'https://yourapp.com/success?session_id={CHECKOUT_SESSION_ID}',
+  cancel_url: 'https://yourapp.com/cancel',
+  metadata: {
+    user_id: '12345',
+    campaign: 'summer_sale',
+    discount_applied: true,
+  },
+  expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+});
+
+// Redirect user
+res.redirect(checkout.url);
+```
+
+## Retrieving a Checkout
+
+Get checkout details:
+
+```typescript
+const checkout = await bloque.checkout.retrieve('checkout_123');
+
+console.log('Status:', checkout.status);
+console.log('Amount:', checkout.amount_total);
+```
+
+## Canceling a Checkout
+
+Cancel an active checkout:
+
+```typescript
+const checkout = await bloque.checkout.cancel('checkout_123');
+
+console.log('Status:', checkout.status); // 'canceled'
+```
+
+## Checkout Response
+
+```typescript
+{
+  id: string;                // Checkout ID
+  object: 'checkout';
+  url: string;               // Payment URL
+  status: string;            // Checkout status
+  amount_total: number;      // Total amount
+  amount_subtotal: number;   // Subtotal
+  currency: 'USD';
+  items: CheckoutItem[];
+  metadata?: Metadata;
+  created_at: string;
+  updated_at: string;
+  expires_at: string;
+}
+```
+
+## Next Steps
+
+- [Webhooks](/pay/guide/webhooks/setup) - Handle checkout events
+- [Payment Methods](/pay/guide/payments/methods) - Configure payment methods

@@ -10,6 +10,7 @@ import './card-payment-form';
 import './cash-payment-form';
 import './payment-method-selector';
 import './pse-payment-form';
+import { getSDKConfig } from './sdk-config';
 import type {
   AppearanceConfig,
   CheckoutConfig,
@@ -257,6 +258,14 @@ export class BloqueCheckout extends LitElement {
   private async sendToAPI(
     payload: PaymentSubmitPayload,
   ): Promise<PaymentResponse> {
+    const sdkConfig = getSDKConfig();
+
+    if (!sdkConfig.isInitialized()) {
+      throw new Error(
+        'SDK not initialized. Please call BloquePayments.init() before using the checkout.',
+      );
+    }
+
     const paymentPayload = this.buildPaymentPayload(payload);
 
     if (!this.config?.amount) {
@@ -270,16 +279,16 @@ export class BloqueCheckout extends LitElement {
       paymentPayload.webhook_url = this.config.webhookUrl;
     }
 
-    const response = await fetch(
-      `https://api.bloque.app/api/payments/${payload.type}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(paymentPayload),
+    const apiUrl = sdkConfig.getApiUrl();
+    const response = await fetch(`${apiUrl}/api/payments/${payload.type}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // biome-ignore lint/style/noNonNullAssertion: <explanation>
+        'X-Api-Key': sdkConfig.apiKey!,
       },
-    );
+      body: JSON.stringify(paymentPayload),
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

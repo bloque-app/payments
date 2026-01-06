@@ -33,19 +33,25 @@ Here's a complete example showing how to integrate Bloque Payments with React on
 ### Frontend Setup (React)
 
 ```tsx
-import { BloqueCheckout } from '@bloque/payments-react';
+import { init, BloqueCheckout } from '@bloque/payments-react';
 import type {
   CheckoutConfig,
   AppearanceConfig,
   PaymentResponse,
 } from '@bloque/payments-react';
 
+// Initialize SDK (do this once at app startup)
+init({
+  apiKey: 'your_api_key',
+  mode: 'sandbox',
+});
+
 function CheckoutPage() {
   // Configuration
   const config: CheckoutConfig = {
     payment_methods: ['card', 'pse', 'cash'],
-    amount: 120_000, // Amount in smallest currency unit (e.g., cents)
-    currency: 'COP',
+    amount: 2999, // Amount in smallest currency unit (e.g., cents)
+    currency: 'USD',
   };
 
   // Appearance customization
@@ -175,8 +181,8 @@ Configure the payment experience:
 ```typescript
 const config: CheckoutConfig = {
   payment_methods: ['card', 'pse', 'cash'], // Available payment methods
-  amount: 120_000,                           // Amount in smallest currency unit
-  currency: 'COP',                           // Currency code
+  amount: 2999,                           // Amount in smallest currency unit
+  currency: 'USD',                           // Currency code
 };
 ```
 
@@ -312,8 +318,8 @@ import type {
 // Type-safe configuration
 const config: CheckoutConfig = {
   payment_methods: ['card', 'pse'],
-  amount: 120_000,
-  currency: 'COP',
+  amount: 2999,
+  currency: 'USD',
 };
 
 // Type-safe event handlers

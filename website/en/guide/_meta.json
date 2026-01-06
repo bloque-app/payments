@@ -3,5 +3,30 @@
     "type": "dir-section-header",
     "name": "start",
     "label": "Getting Started"
+  },
+  {
+    "type": "dir-section-header",
+    "name": "react",
+    "label": "React Integration"
+  },
+  {
+    "type": "dir-section-header",
+    "name": "payments",
+    "label": "Payment Methods"
+  },
+  {
+    "type": "dir-section-header",
+    "name": "checkout",
+    "label": "Checkout API"
+  },
+  {
+    "type": "dir-section-header",
+    "name": "webhooks",
+    "label": "Webhooks"
+  },
+  {
+    "type": "dir-section-header",
+    "name": "advanced",
+    "label": "Advanced"
   }
 ]

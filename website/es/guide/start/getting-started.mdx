@@ -33,19 +33,25 @@ Aquí hay un ejemplo completo que muestra cómo integrar Bloque Payments con Rea
 ### Configuración Frontend (React)
 
 ```tsx
-import { BloqueCheckout } from '@bloque/payments-react';
+import { init, BloqueCheckout } from '@bloque/payments-react';
 import type {
   CheckoutConfig,
   AppearanceConfig,
   PaymentResponse,
 } from '@bloque/payments-react';
 
+// Inicializar SDK (hacer esto una vez al inicio de la app)
+init({
+  apiKey: 'tu_api_key',
+  mode: 'sandbox',
+});
+
 function CheckoutPage() {
   // Configuración
   const config: CheckoutConfig = {
     payment_methods: ['card', 'pse', 'cash'],
-    amount: 120_000, // Monto en la unidad más pequeña (ej: centavos)
-    currency: 'COP',
+    amount: 2999, // Monto en la unidad más pequeña (ej: centavos)
+    currency: 'USD',
   };
 
   // Personalización de apariencia
@@ -175,8 +181,8 @@ Configura la experiencia de pago:
 ```typescript
 const config: CheckoutConfig = {
   payment_methods: ['card', 'pse', 'cash'], // Métodos de pago disponibles
-  amount: 120_000,                           // Monto en la unidad más pequeña
-  currency: 'COP',                           // Código de moneda
+  amount: 2999,                           // Monto en la unidad más pequeña
+  currency: 'USD',                           // Código de moneda
 };
 ```
 
@@ -312,8 +318,8 @@ import type {
 // Configuración type-safe
 const config: CheckoutConfig = {
   payment_methods: ['card', 'pse'],
-  amount: 120_000,
-  currency: 'COP',
+  amount: 2999,
+  currency: 'USD',
 };
 
 // Manejadores de eventos type-safe

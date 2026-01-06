@@ -1,0 +1,300 @@
+# Configuración de Webhooks
+
+Los webhooks te permiten recibir notificaciones en tiempo real sobre eventos de pago desde Bloque.
+
+## ¿Qué son los Webhooks?
+
+Los webhooks son callbacks HTTP que notifican a tu servidor cuando ocurren eventos específicos, como pagos exitosos, transacciones fallidas o actualizaciones de estado.
+
+## Configurando Webhooks
+
+### 1. Crear Endpoint de Webhook
+
+Crea un endpoint en tu backend para recibir eventos de webhook:
+
+```typescript
+import { Bloque } from '@bloque/payments';
+import express from 'express';
+
+const app = express();
+
+// Inicializar SDK con secreto de webhook
+const bloque = new Bloque({
+  apiKey: process.env.BLOQUE_API_KEY!,
+  mode: 'production',
+  webhookSecret: process.env.BLOQUE_WEBHOOK_SECRET,
+});
+
+// Endpoint de webhook
+app.post('/webhooks/bloque', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['x-bloque-signature'] as string;
+
+  try {
+    // Verificar firma del webhook
+    const isValid = bloque.webhooks.verify(req.body, signature);
+
+    if (!isValid) {
+      return res.status(400).send('Firma inválida');
+    }
+
+    // Parsear evento
+    const event = JSON.parse(req.body.toString());
+
+    // Manejar evento
+    handleWebhookEvent(event);
+
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Error de webhook:', error);
+    res.status(400).send('Error de webhook');
+  }
+});
+
+app.listen(3000);
+```
+
+### 2. Verificar Firmas de Webhook
+
+Siempre verifica las firmas de webhook para asegurar que provienen de Bloque:
+
+```typescript
+const isValid = bloque.webhooks.verify(
+  requestBody,
+  signatureHeader,
+  { secret: process.env.BLOQUE_WEBHOOK_SECRET }
+);
+
+if (!isValid) {
+  // Rechazar webhook
+  return res.status(400).send('Firma inválida');
+}
+```
+
+### 3. Manejar Eventos de Webhook
+
+Procesa diferentes tipos de eventos:
+
+```typescript
+function handleWebhookEvent(event) {
+  switch (event.type) {
+    case 'payment.succeeded':
+      handlePaymentSucceeded(event.data);
+      break;
+
+    case 'payment.failed':
+      handlePaymentFailed(event.data);
+      break;
+
+    case 'checkout.completed':
+      handleCheckoutCompleted(event.data);
+      break;
+
+    case 'checkout.expired':
+      handleCheckoutExpired(event.data);
+      break;
+
+    default:
+      console.log('Tipo de evento no manejado:', event.type);
+  }
+}
+```
+
+## Eventos de Webhook
+
+### `payment.succeeded`
+
+Se dispara cuando un pago se procesa exitosamente.
+
+```typescript
+{
+  type: 'payment.succeeded',
+  data: {
+    id: 'pay_123',
+    status: 'succeeded',
+    amount: 2999,
+    currency: 'USD',
+    payment_method: 'card',
+    created_at: '2024-01-15T10:30:00Z'
+  }
+}
+```
+
+### `payment.failed`
+
+Se dispara cuando un pago falla.
+
+```typescript
+{
+  type: 'payment.failed',
+  data: {
+    id: 'pay_123',
+    status: 'failed',
+    error: 'insufficient_funds',
+    error_message: 'Fondos insuficientes'
+  }
+}
+```
+
+### `checkout.completed`
+
+Se dispara cuando una sesión de checkout se completa.
+
+```typescript
+{
+  type: 'checkout.completed',
+  data: {
+    id: 'checkout_123',
+    status: 'completed',
+    payment_id: 'pay_123'
+  }
+}
+```
+
+### `checkout.expired`
+
+Se dispara cuando una sesión de checkout expira.
+
+```typescript
+{
+  type: 'checkout.expired',
+  data: {
+    id: 'checkout_123',
+    status: 'expired'
+  }
+}
+```
+
+## Ejemplo Completo
+
+```typescript
+import { Bloque } from '@bloque/payments';
+import express from 'express';
+
+const app = express();
+
+const bloque = new Bloque({
+  apiKey: process.env.BLOQUE_API_KEY!,
+  mode: 'production',
+  webhookSecret: process.env.BLOQUE_WEBHOOK_SECRET,
+});
+
+app.post('/webhooks/bloque', express.raw({ type: 'application/json' }), async (req, res) => {
+  const signature = req.headers['x-bloque-signature'] as string;
+
+  try {
+    // Verificar firma
+    const isValid = bloque.webhooks.verify(req.body, signature);
+
+    if (!isValid) {
+      return res.status(400).send('Firma inválida');
+    }
+
+    // Parsear evento
+    const event = JSON.parse(req.body.toString());
+    console.log('Webhook recibido:', event.type);
+
+    // Manejar eventos
+    switch (event.type) {
+      case 'payment.succeeded':
+        // Actualizar estado de orden
+        await updateOrderStatus(event.data.id, 'paid');
+        // Enviar email de confirmación
+        await sendConfirmationEmail(event.data);
+        break;
+
+      case 'payment.failed':
+        // Registrar fallo
+        console.error('Pago fallido:', event.data);
+        // Notificar al cliente
+        await sendFailureNotification(event.data);
+        break;
+
+      case 'checkout.completed':
+        // Marcar checkout como completo
+        await markCheckoutComplete(event.data.id);
+        break;
+    }
+
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Error de webhook:', error);
+    res.status(400).send('Error de webhook');
+  }
+});
+
+app.listen(3000);
+```
+
+## Mejores Prácticas
+
+### 1. Responder Rápidamente
+
+Siempre responde con `200 OK` rápidamente. Procesa eventos de forma asíncrona:
+
+```typescript
+app.post('/webhooks/bloque', async (req, res) => {
+  const signature = req.headers['x-bloque-signature'] as string;
+
+  // Verificar
+  const isValid = bloque.webhooks.verify(req.body, signature);
+  if (!isValid) {
+    return res.status(400).send('Firma inválida');
+  }
+
+  // Responder inmediatamente
+  res.json({ received: true });
+
+  // Procesar de forma asíncrona
+  const event = JSON.parse(req.body.toString());
+  processWebhookAsync(event).catch(console.error);
+});
+```
+
+### 2. Manejar Idempotencia
+
+Los webhooks pueden enviarse múltiples veces. Almacena IDs de eventos procesados:
+
+```typescript
+const processedEvents = new Set();
+
+function handleWebhookEvent(event) {
+  if (processedEvents.has(event.id)) {
+    console.log('Evento ya procesado:', event.id);
+    return;
+  }
+
+  // Procesar evento
+  processEvent(event);
+
+  // Marcar como procesado
+  processedEvents.add(event.id);
+}
+```
+
+### 3. Lógica de Reintento
+
+Bloque reintentará webhooks si tu endpoint falla. Asegura que tu endpoint sea idempotente.
+
+### 4. Asegurar tu Endpoint
+
+- Siempre verifica firmas de webhook
+- Usa HTTPS en producción
+- Mantén los secretos de webhook seguros
+- Limita la tasa de requests a endpoints de webhook
+
+## Probando Webhooks
+
+Prueba webhooks localmente usando herramientas como ngrok:
+
+```bash
+# Iniciar ngrok
+ngrok http 3000
+
+# Usa la URL de ngrok en el dashboard de Bloque
+https://tu-url-ngrok.ngrok.io/webhooks/bloque
+```
+
+## Próximos Pasos
+
+- [Métodos de Pago](/pay/guide/payments/methods) - Aprende sobre métodos de pago
+- [Manejo de Errores](/pay/guide/advanced/error-handling) - Maneja errores con gracia

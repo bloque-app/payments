@@ -12,6 +12,8 @@ customElements.define('cash-payment-form', CashPaymentForm);
 
 export type { PaymentSubmitPayload } from '@bloque/payments-core';
 export { BloqueCheckout } from './bloque-checkout';
+export type { SDKInitOptions } from './sdk-config';
+export { init } from './sdk-config';
 export type {
   AppearanceConfig,
   CardFormLabels,

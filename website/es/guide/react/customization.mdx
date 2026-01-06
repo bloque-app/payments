@@ -1,0 +1,268 @@
+# Personalización
+
+Personaliza la apariencia del componente `BloqueCheckout` para que coincida con tu marca.
+
+## Configuración de Apariencia
+
+Usa el prop `appearance` para personalizar colores, bordes y fuentes:
+
+```tsx
+import { BloqueCheckout } from '@bloque/payments-react';
+
+<BloqueCheckout
+  config={{
+    payment_methods: ['card', 'pse'],
+    amount: 2999,
+    currency: 'USD',
+  }}
+  appearance={{
+    primaryColor: '#10b981',
+    borderRadius: '12px',
+    fontFamily: 'Inter, system-ui, sans-serif',
+  }}
+  onSubmit={handleSubmit}
+/>
+```
+
+## Opciones Disponibles
+
+### `primaryColor`
+
+Establece el color principal de marca para botones, enlaces y estados activos.
+
+```tsx
+appearance={{
+  primaryColor: '#10b981',  // Verde
+}}
+```
+
+**Ejemplos:**
+```tsx
+// Azul
+primaryColor: '#3b82f6'
+
+// Morado
+primaryColor: '#8b5cf6'
+
+// Rojo
+primaryColor: '#ef4444'
+
+// Color de marca personalizado
+primaryColor: '#FF6B6B'
+```
+
+### `borderRadius`
+
+Controla la redondez de inputs, botones y contenedores.
+
+```tsx
+appearance={{
+  borderRadius: '12px',
+}}
+```
+
+**Ejemplos:**
+```tsx
+// Esquinas rectas
+borderRadius: '0px'
+
+// Ligeramente redondeado
+borderRadius: '4px'
+
+// Moderadamente redondeado (predeterminado)
+borderRadius: '8px'
+
+// Muy redondeado
+borderRadius: '16px'
+
+// Forma de píldora
+borderRadius: '9999px'
+```
+
+### `fontFamily`
+
+Establece la familia de fuente para todo el texto.
+
+```tsx
+appearance={{
+  fontFamily: 'Inter, system-ui, sans-serif',
+}}
+```
+
+**Ejemplos:**
+```tsx
+// Fuentes del sistema
+fontFamily: 'system-ui, -apple-system, sans-serif'
+
+// Google Fonts
+fontFamily: "'Poppins', sans-serif"
+
+// Fuentes personalizadas
+fontFamily: "'TuFuente', 'Fallback', sans-serif"
+```
+
+## Ejemplo Completo
+
+```tsx
+import { BloqueCheckout } from '@bloque/payments-react';
+
+function CheckoutPage() {
+  const appearance = {
+    primaryColor: '#6366f1',           // Indigo
+    borderRadius: '16px',               // Redondeado
+    fontFamily: "'Inter', sans-serif",  // Fuente Inter
+  };
+
+  return (
+    <BloqueCheckout
+      config={{
+        payment_methods: ['card', 'pse', 'cash'],
+        amount: 2999,
+        currency: 'USD',
+      }}
+      appearance={appearance}
+      onSubmit={handleSubmit}
+    />
+  );
+}
+```
+
+## Personalización con CSS
+
+Para estilos más avanzados, usa el prop `className`:
+
+```tsx
+<BloqueCheckout
+  config={config}
+  appearance={appearance}
+  className="custom-checkout"
+  onSubmit={handleSubmit}
+/>
+```
+
+Luego agrega CSS personalizado:
+
+```css
+.custom-checkout {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: white;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+```
+
+## Estilos Inline
+
+Usa el prop `style` para estilos inline:
+
+```tsx
+<BloqueCheckout
+  config={config}
+  appearance={appearance}
+  style={{
+    maxWidth: '600px',
+    margin: '0 auto',
+    padding: '2rem',
+    backgroundColor: '#ffffff',
+    borderRadius: '8px',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+  }}
+  onSubmit={handleSubmit}
+/>
+```
+
+## Ejemplos de Marca
+
+### Startup Tecnológica Moderna
+
+```tsx
+<BloqueCheckout
+  config={config}
+  appearance={{
+    primaryColor: '#6366f1',
+    borderRadius: '12px',
+    fontFamily: "'Inter', system-ui, sans-serif",
+  }}
+  onSubmit={handleSubmit}
+/>
+```
+
+### Tienda E-commerce
+
+```tsx
+<BloqueCheckout
+  config={config}
+  appearance={{
+    primaryColor: '#f59e0b',
+    borderRadius: '8px',
+    fontFamily: "'Poppins', sans-serif",
+  }}
+  onSubmit={handleSubmit}
+/>
+```
+
+### Servicios Financieros
+
+```tsx
+<BloqueCheckout
+  config={config}
+  appearance={{
+    primaryColor: '#0f766e',
+    borderRadius: '4px',
+    fontFamily: "'IBM Plex Sans', sans-serif",
+  }}
+  onSubmit={handleSubmit}
+/>
+```
+
+### Agencia Creativa
+
+```tsx
+<BloqueCheckout
+  config={config}
+  appearance={{
+    primaryColor: '#ec4899',
+    borderRadius: '24px',
+    fontFamily: "'Quicksand', sans-serif",
+  }}
+  onSubmit={handleSubmit}
+/>
+```
+
+## Temas Dinámicos
+
+Cambia la apariencia según las preferencias del usuario:
+
+```tsx
+import { useState } from 'react';
+import { BloqueCheckout } from '@bloque/payments-react';
+
+function CheckoutPage() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  const appearance = {
+    primaryColor: theme === 'light' ? '#3b82f6' : '#60a5fa',
+    borderRadius: '12px',
+    fontFamily: "'Inter', sans-serif",
+  };
+
+  return (
+    <div style={{ background: theme === 'dark' ? '#1f2937' : '#ffffff' }}>
+      <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+        Cambiar Tema
+      </button>
+      <BloqueCheckout
+        config={config}
+        appearance={appearance}
+        onSubmit={handleSubmit}
+      />
+    </div>
+  );
+}
+```
+
+## Próximos Pasos
+
+- [Integración React](/pay/guide/react/basic-setup) - Aprende la configuración básica
+- [Métodos de Pago](/pay/guide/payments/methods) - Configura métodos de pago

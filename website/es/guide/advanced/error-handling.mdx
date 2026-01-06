@@ -1,0 +1,250 @@
+# Manejo de Errores
+
+Aprende cómo manejar errores con gracia en Bloque Payments.
+
+## Tipos de Errores
+
+Bloque Payments puede devolver diferentes tipos de errores:
+
+- **Errores de validación**: Datos de entrada inválidos
+- **Errores de autenticación**: Clave API inválida o faltante
+- **Errores de pago**: Fallos en el procesamiento de pagos
+- **Errores de red**: Problemas de conexión
+
+## Manejo de Errores en Frontend
+
+Usa el callback `onError` para manejar errores en React:
+
+```tsx
+<BloqueCheckout
+  config={config}
+  onSubmit={handleSubmit}
+  onError={(error) => {
+    console.error('Pago fallido:', error.message);
+
+    // Mostrar mensaje amigable para el usuario
+    if (error.type === 'card_declined') {
+      alert('Tu tarjeta fue rechazada. Por favor intenta otro método de pago.');
+    } else if (error.type === 'insufficient_funds') {
+      alert('Fondos insuficientes. Por favor intenta otra tarjeta.');
+    } else {
+      alert(`Pago fallido: ${error.message}`);
+    }
+  }}
+/>
+```
+
+## Manejo de Errores en Backend
+
+Maneja errores en tu endpoint de pagos:
+
+```typescript
+app.post('/api/payments', async (req, res) => {
+  try {
+    const payload = req.body;
+
+    const payment = await bloque.payments.create({
+      payment: payload,
+    });
+
+    res.json(payment);
+  } catch (error) {
+    console.error('Error de pago:', error);
+
+    // Determinar tipo de error
+    if (error.status === 400) {
+      return res.status(400).json({
+        success: false,
+        error: 'Datos de pago inválidos',
+        message: error.message,
+      });
+    }
+
+    if (error.status === 402) {
+      return res.status(402).json({
+        success: false,
+        error: 'Pago fallido',
+        message: error.message,
+        code: error.code,
+      });
+    }
+
+    // Error genérico
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor',
+    });
+  }
+});
+```
+
+## Códigos de Error Comunes
+
+### Errores de Tarjeta
+
+- `card_declined`: Tarjeta rechazada
+- `insufficient_funds`: Fondos insuficientes
+- `invalid_card_number`: Número de tarjeta inválido
+- `invalid_expiry`: Fecha de vencimiento inválida
+- `invalid_cvv`: Código de seguridad inválido
+
+### Errores PSE
+
+- `bank_unavailable`: Sistema bancario no disponible
+- `transaction_cancelled`: Usuario canceló la transacción
+- `authentication_failed`: Autenticación fallida
+
+### Errores Generales
+
+- `invalid_amount`: Monto de pago inválido
+- `invalid_currency`: Moneda no soportada
+- `expired_checkout`: Sesión de checkout expirada
+
+## Lógica de Reintento
+
+Implementa lógica de reintento para errores transitorios:
+
+```typescript
+async function processPaymentWithRetry(payload, maxRetries = 3) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        return response.json();
+      }
+
+      const error = await response.json();
+
+      // No reintentar en errores de validación
+      if (response.status === 400) {
+        throw new Error(error.message);
+      }
+
+      lastError = error;
+
+      // Esperar antes de reintentar
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      lastError = error;
+    }
+  }
+
+  throw lastError;
+}
+```
+
+## Mensajes Amigables para el Usuario
+
+Proporciona mensajes de error claros y accionables:
+
+```typescript
+function getErrorMessage(error) {
+  switch (error.code) {
+    case 'card_declined':
+      return 'Tu tarjeta fue rechazada. Por favor intenta otro método de pago o contacta a tu banco.';
+
+    case 'insufficient_funds':
+      return 'Tu tarjeta tiene fondos insuficientes. Por favor intenta otra tarjeta.';
+
+    case 'invalid_card_number':
+      return 'El número de tarjeta que ingresaste es inválido. Por favor verifica e intenta de nuevo.';
+
+    case 'expired_card':
+      return 'Tu tarjeta ha expirado. Por favor usa una tarjeta diferente.';
+
+    case 'invalid_cvv':
+      return 'El código de seguridad (CVV) que ingresaste es inválido.';
+
+    case 'bank_unavailable':
+      return 'El banco seleccionado no está disponible temporalmente. Por favor intenta más tarde.';
+
+    default:
+      return 'El pago falló. Por favor intenta de nuevo o contacta a soporte.';
+  }
+}
+```
+
+## Ejemplo Completo de Manejo de Errores
+
+```tsx
+import { BloqueCheckout } from '@bloque/payments-react';
+import { useState } from 'react';
+
+function CheckoutPage() {
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (payload) => {
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Pago fallido');
+      }
+
+      return response.json();
+    } catch (err) {
+      console.error('Error de pago:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleError = (error) => {
+    console.error('Pago fallido:', error);
+    setError(getErrorMessage(error));
+  };
+
+  return (
+    <div>
+      {error && (
+        <div className="error-banner">
+          {error}
+        </div>
+      )}
+
+      <BloqueCheckout
+        config={{
+          payment_methods: ['card', 'pse'],
+          amount: 2999,
+          currency: 'USD',
+        }}
+        onSubmit={handleSubmit}
+        onError={handleError}
+        onSuccess={() => {
+          setError(null);
+          window.location.href = '/success';
+        }}
+      />
+
+      {loading && <div>Procesando pago...</div>}
+    </div>
+  );
+}
+```
+
+## Próximos Pasos
+
+- [Webhooks](/pay/guide/webhooks/setup) - Maneja eventos de pago
+- [Métodos de Pago](/pay/guide/payments/methods) - Aprende sobre métodos de pago

@@ -1,0 +1,519 @@
+# Integración React - Configuración Básica
+
+Aprende cómo integrar Bloque Payments en tu aplicación React usando el componente `BloqueCheckout`.
+
+## Instalación
+
+Instala el paquete de componentes React:
+
+```bash
+npm install @bloque/payments-react
+# o
+yarn add @bloque/payments-react
+# o
+pnpm add @bloque/payments-react
+# o
+bun add @bloque/payments-react
+```
+
+## Inicialización del SDK
+
+Antes de usar el componente `BloqueCheckout`, debes inicializar el SDK con tu API key:
+
+```tsx
+import { init } from '@bloque/payments-react';
+
+// Inicializar una vez al inicio de tu aplicación (ej: en main.tsx o App.tsx)
+init({
+  apiKey: 'tu_api_key',
+  mode: 'sandbox', // o 'production'
+});
+```
+
+:::warning Seguridad
+Nunca expongas tu API key real en código del lado del cliente en producción. Para aplicaciones en producción, el checkout debe enviar los datos de pago a tu backend usando `onSubmit`, donde el pago se procesa de forma segura con tu API key.
+:::
+
+## Uso Básico del Componente
+
+La forma más simple de agregar pagos a tu app React:
+
+```tsx
+import { BloqueCheckout } from '@bloque/payments-react';
+
+function CheckoutPage() {
+  const handleSubmit = async (payload) => {
+    const response = await fetch('/api/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error('Pago fallido');
+    }
+
+    return response.json();
+  };
+
+  return (
+    <BloqueCheckout
+      config={{
+        payment_methods: ['card', 'pse', 'cash'],
+        amount: 2999,
+        currency: 'USD',
+      }}
+      onSubmit={handleSubmit}
+      onSuccess={(response) => {
+        console.log('¡Pago exitoso!', response.id);
+        window.location.href = '/success';
+      }}
+      onError={(error) => {
+        console.error('Pago fallido:', error.message);
+        alert(`Pago fallido: ${error.message}`);
+      }}
+    />
+  );
+}
+
+export default CheckoutPage;
+```
+
+## Props del Componente
+
+### Props Requeridas
+
+#### `onSubmit`
+
+Función llamada cuando el usuario envía el formulario de pago. Debe enviar los datos de pago a tu backend.
+
+```typescript
+onSubmit?: (payload: PaymentSubmitPayload) => Promise<PaymentResponse | undefined>;
+```
+
+**Ejemplo:**
+
+```tsx
+const handleSubmit = async (payload) => {
+  const response = await fetch('/api/payments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error('Pago fallido');
+  }
+
+  return response.json();
+};
+
+<BloqueCheckout onSubmit={handleSubmit} />
+```
+
+### Props Opcionales
+
+#### `config`
+
+Objeto de configuración para la experiencia de checkout:
+
+```typescript
+interface CheckoutConfig {
+  payment_methods?: PaymentMethodType[];  // ['card', 'pse', 'cash']
+  amount?: number;                         // Monto en la unidad más pequeña
+  currency?: string;                       // Código de moneda (ej: 'USD')
+  labels?: CheckoutLabels;                 // Textos personalizados
+}
+```
+
+**Ejemplo:**
+
+```tsx
+<BloqueCheckout
+  config={{
+    payment_methods: ['card', 'pse'],
+    amount: 2999,
+    currency: 'USD',
+  }}
+  onSubmit={handleSubmit}
+/>
+```
+
+#### `config.labels`
+
+Personaliza los textos del formulario de pago:
+
+```typescript
+interface CheckoutLabels {
+  card?: CardFormLabels;
+  pse?: PSEFormLabels;
+  cash?: CashFormLabels;
+}
+
+interface CardFormLabels {
+  cardNumber?: string;
+  cardNumberPlaceholder?: string;
+  cardholderName?: string;
+  cardholderNamePlaceholder?: string;
+  expiryDate?: string;
+  expiryDatePlaceholder?: string;
+  cvv?: string;
+  cvvPlaceholder?: string;
+  email?: string;
+  emailPlaceholder?: string;
+  submitButton?: string;
+}
+```
+
+**Ejemplo con textos personalizados:**
+
+```tsx
+<BloqueCheckout
+  config={{
+    payment_methods: ['card', 'pse'],
+    amount: 4999,
+    currency: 'USD',
+    labels: {
+      card: {
+        cardNumber: 'Número de tarjeta',
+        cardNumberPlaceholder: '1234 5678 9012 3456',
+        cardholderName: 'Nombre del titular',
+        cardholderNamePlaceholder: 'JUAN PÉREZ',
+        expiryDate: 'Fecha de expiración',
+        expiryDatePlaceholder: 'MM/AA',
+        cvv: 'CVV',
+        cvvPlaceholder: '123',
+        email: 'Correo electrónico',
+        emailPlaceholder: 'ejemplo@correo.com',
+        submitButton: 'Pagar $49.99',
+      },
+    },
+  }}
+  onSubmit={handleSubmit}
+/>
+```
+
+#### `appearance`
+
+Personaliza la apariencia visual:
+
+```typescript
+interface AppearanceConfig {
+  primaryColor?: string;    // Color de marca
+  borderRadius?: string;    // Radio de borde para inputs
+  fontFamily?: string;      // Familia de fuente
+}
+```
+
+**Ejemplo:**
+
+```tsx
+<BloqueCheckout
+  config={config}
+  appearance={{
+    primaryColor: '#10b981',
+    borderRadius: '12px',
+    fontFamily: 'Inter, system-ui, sans-serif',
+  }}
+  onSubmit={handleSubmit}
+/>
+```
+
+#### `amount`
+
+Forma alternativa de establecer el monto (en lugar de usar `config.amount`):
+
+```tsx
+<BloqueCheckout
+  amount={2999}
+  config={{
+    payment_methods: ['card'],
+    currency: 'USD',
+  }}
+  onSubmit={handleSubmit}
+/>
+```
+
+#### `availableMethods`
+
+Array de métodos de pago a mostrar (alternativa a `config.payment_methods`):
+
+```tsx
+<BloqueCheckout
+  availableMethods={['card', 'pse']}
+  onSubmit={handleSubmit}
+/>
+```
+
+#### `requireEmail`
+
+Si el email es requerido para pagos con tarjeta (predeterminado: `true`):
+
+```tsx
+<BloqueCheckout
+  requireEmail={true}
+  config={{ payment_methods: ['card'] }}
+  onSubmit={handleSubmit}
+/>
+```
+
+#### `showMethodSelector`
+
+Mostrar/ocultar el selector de método de pago (predeterminado: `true`):
+
+```tsx
+<BloqueCheckout
+  showMethodSelector={true}
+  config={{ payment_methods: ['card', 'pse'] }}
+  onSubmit={handleSubmit}
+/>
+```
+
+#### `onSuccess`
+
+Callback disparado cuando el pago tiene éxito:
+
+```tsx
+<BloqueCheckout
+  config={config}
+  onSubmit={handleSubmit}
+  onSuccess={(response) => {
+    console.log('¡Pago exitoso!');
+    console.log('ID de Pago:', response.id);
+    console.log('Estado:', response.status);
+    window.location.href = '/success';
+  }}
+/>
+```
+
+#### `onError`
+
+Callback disparado cuando el pago falla:
+
+```tsx
+<BloqueCheckout
+  config={config}
+  onSubmit={handleSubmit}
+  onError={(error) => {
+    console.error('Pago fallido:', error.message);
+    alert(`Pago fallido: ${error.message}`);
+  }}
+/>
+```
+
+#### `className` y `style`
+
+Props estándar de React para estilos:
+
+```tsx
+<BloqueCheckout
+  config={config}
+  onSubmit={handleSubmit}
+  className="my-checkout"
+  style={{ maxWidth: '600px', margin: '0 auto' }}
+/>
+```
+
+## Ejemplo Completo
+
+Aquí hay un ejemplo completo con todas las opciones comunes:
+
+```tsx
+import { BloqueCheckout } from '@bloque/payments-react';
+import type {
+  CheckoutConfig,
+  AppearanceConfig,
+  PaymentResponse,
+} from '@bloque/payments-react';
+
+function CheckoutPage() {
+  // Configuración
+  const config: CheckoutConfig = {
+    payment_methods: ['card', 'pse', 'cash'],
+    amount: 2999,
+    currency: 'USD',
+  };
+
+  // Apariencia
+  const appearance: AppearanceConfig = {
+    primaryColor: '#10b981',
+    borderRadius: '12px',
+    fontFamily: 'Inter, system-ui, sans-serif',
+  };
+
+  // Manejador de envío
+  const handleSubmit = async (payload) => {
+    try {
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Pago fallido');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error de pago:', error);
+      throw error;
+    }
+  };
+
+  // Manejador de éxito
+  const handleSuccess = (response: PaymentResponse) => {
+    console.log('¡Pago exitoso!');
+    console.log('ID de Pago:', response.id);
+    console.log('Estado:', response.status);
+    window.location.href = `/success?payment=${response.id}`;
+  };
+
+  // Manejador de error
+  const handleError = (error: { message: string }) => {
+    console.error('Pago fallido:', error.message);
+    alert(`Pago fallido: ${error.message}`);
+  };
+
+  return (
+    <div className="checkout-container">
+      <h1>Checkout</h1>
+      <BloqueCheckout
+        config={config}
+        appearance={appearance}
+        onSubmit={handleSubmit}
+        onSuccess={handleSuccess}
+        onError={handleError}
+        className="checkout-form"
+        style={{ maxWidth: '600px' }}
+      />
+    </div>
+  );
+}
+
+export default CheckoutPage;
+```
+
+## Soporte TypeScript
+
+El paquete incluye definiciones completas de TypeScript:
+
+```typescript
+import type {
+  BloqueCheckoutProps,
+  CheckoutConfig,
+  AppearanceConfig,
+  PaymentResponse,
+  PaymentSubmitPayload,
+  PaymentMethodType,
+} from '@bloque/payments-react';
+
+// Configuración type-safe
+const config: CheckoutConfig = {
+  payment_methods: ['card', 'pse'],
+  amount: 2999,
+  currency: 'USD',
+};
+
+// Manejadores type-safe
+const handleSuccess = (response: PaymentResponse) => {
+  console.log('ID de Pago:', response.id);
+};
+```
+
+## Ejemplos Específicos por Framework
+
+### Next.js App Router
+
+```tsx
+'use client';
+
+import { BloqueCheckout } from '@bloque/payments-react';
+
+export default function CheckoutPage() {
+  const handleSubmit = async (payload) => {
+    const response = await fetch('/api/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return response.json();
+  };
+
+  return (
+    <BloqueCheckout
+      config={{
+        payment_methods: ['card', 'pse'],
+        amount: 2999,
+        currency: 'USD',
+      }}
+      onSubmit={handleSubmit}
+    />
+  );
+}
+```
+
+### Next.js Pages Router
+
+```tsx
+import { BloqueCheckout } from '@bloque/payments-react';
+
+export default function Checkout() {
+  const handleSubmit = async (payload) => {
+    const response = await fetch('/api/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return response.json();
+  };
+
+  return (
+    <BloqueCheckout
+      config={{
+        payment_methods: ['card'],
+        amount: 2999,
+        currency: 'USD',
+      }}
+      onSubmit={handleSubmit}
+    />
+  );
+}
+```
+
+### Vite + React
+
+```tsx
+import { BloqueCheckout } from '@bloque/payments-react';
+
+function App() {
+  const handleSubmit = async (payload) => {
+    const response = await fetch('http://localhost:3000/api/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return response.json();
+  };
+
+  return (
+    <BloqueCheckout
+      config={{
+        payment_methods: ['card', 'pse', 'cash'],
+        amount: 2999,
+        currency: 'USD',
+      }}
+      onSubmit={handleSubmit}
+    />
+  );
+}
+
+export default App;
+```
+
+## Próximos Pasos
+
+- [Personalización](/pay/guide/react/customization) - Personaliza la UI
+- [Métodos de Pago](/pay/guide/payments/methods) - Aprende sobre los métodos de pago disponibles
+- [Webhooks](/pay/guide/webhooks/setup) - Maneja notificaciones de pago

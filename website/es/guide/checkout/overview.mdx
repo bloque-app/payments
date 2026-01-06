@@ -1,0 +1,152 @@
+# API de Checkout
+
+La API de Checkout te permite crear páginas de pago alojadas para tus clientes.
+
+## Creando un Checkout
+
+Crea una sesión de checkout con items y URLs de redirección:
+
+```typescript
+import { Bloque } from '@bloque/payments';
+
+const bloque = new Bloque({
+  apiKey: process.env.BLOQUE_API_KEY!,
+  mode: 'production',
+});
+
+const checkout = await bloque.checkout.create({
+  name: 'Curso de React',
+  description: 'Aprende React desde cero',
+  image_url: 'https://example.com/course.jpg',
+  items: [
+    {
+      name: 'Curso de React',
+      amount: 2999,
+      quantity: 1,
+      image_url: 'https://example.com/course.jpg',
+    },
+  ],
+  success_url: 'https://tuapp.com/success',
+  cancel_url: 'https://tuapp.com/cancel',
+});
+
+console.log('URL de Checkout:', checkout.url);
+// Redirigir cliente a checkout.url
+```
+
+## Parámetros del Checkout
+
+### Parámetros Requeridos
+
+```typescript
+{
+  name: string;              // Nombre del checkout
+  items: CheckoutItem[];     // Items a comprar
+  success_url: string;       // URL de redirección después de éxito
+  cancel_url: string;        // URL de redirección después de cancelación
+}
+```
+
+### Parámetros Opcionales
+
+```typescript
+{
+  description?: string;      // Descripción del checkout
+  image_url?: string;        // URL de imagen del checkout
+  metadata?: Record<string, string | number | boolean>;
+  expires_at?: string;       // Fecha de expiración (ISO 8601)
+}
+```
+
+## Items del Checkout
+
+Cada item en el checkout:
+
+```typescript
+{
+  name: string;        // Nombre del item
+  amount: number;      // Precio en la unidad más pequeña
+  quantity: number;    // Cantidad
+  image_url?: string;  // URL de imagen del item
+}
+```
+
+## Ejemplo Completo
+
+```typescript
+const checkout = await bloque.checkout.create({
+  name: 'Carrito de Compras',
+  description: 'Tus items seleccionados',
+  image_url: 'https://example.com/cart.jpg',
+  items: [
+    {
+      name: 'Mouse Inalámbrico',
+      amount: 999,
+      quantity: 1,
+      image_url: 'https://example.com/mouse.jpg',
+    },
+    {
+      name: 'Cable USB',
+      amount: 499,
+      quantity: 2,
+      image_url: 'https://example.com/cable.jpg',
+    },
+  ],
+  success_url: 'https://tuapp.com/success?session_id={CHECKOUT_SESSION_ID}',
+  cancel_url: 'https://tuapp.com/cancel',
+  metadata: {
+    user_id: '12345',
+    campaign: 'summer_sale',
+    discount_applied: true,
+  },
+  expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 horas
+});
+
+// Redirigir usuario
+res.redirect(checkout.url);
+```
+
+## Recuperar un Checkout
+
+Obtener detalles del checkout:
+
+```typescript
+const checkout = await bloque.checkout.retrieve('checkout_123');
+
+console.log('Estado:', checkout.status);
+console.log('Monto:', checkout.amount_total);
+```
+
+## Cancelar un Checkout
+
+Cancelar un checkout activo:
+
+```typescript
+const checkout = await bloque.checkout.cancel('checkout_123');
+
+console.log('Estado:', checkout.status); // 'canceled'
+```
+
+## Respuesta del Checkout
+
+```typescript
+{
+  id: string;                // ID del checkout
+  object: 'checkout';
+  url: string;               // URL de pago
+  status: string;            // Estado del checkout
+  amount_total: number;      // Monto total
+  amount_subtotal: number;   // Subtotal
+  currency: 'USD';
+  items: CheckoutItem[];
+  metadata?: Metadata;
+  created_at: string;
+  updated_at: string;
+  expires_at: string;
+}
+```
+
+## Próximos Pasos
+
+- [Webhooks](/pay/guide/webhooks/setup) - Maneja eventos de checkout
+- [Métodos de Pago](/pay/guide/payments/methods) - Configura métodos de pago
