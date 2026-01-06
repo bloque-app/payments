@@ -22,8 +22,10 @@ Instala el SDK de backend:
 
 Para usar Bloque Payments, necesitarás una clave API. Puedes obtener una desde el [Panel de Bloque](https://app.bloque.app/settings/api).
 
-:::warning Seguridad
-Nunca expongas tu clave API en código del lado del cliente. Siempre usa variables de entorno y mantén tus claves seguras en tu backend.
+:::tip Claves API
+Bloque proporciona dos tipos de claves API:
+- **Public API Key**: Puede usarse de forma segura en el cliente (frontend) para inicializar el SDK.
+- **Secret API Key**: Solo debe usarse en el backend. Nunca la expongas en código del lado del cliente.
 :::
 
 ## Inicio Rápido: Integración Completa
@@ -42,7 +44,7 @@ import type {
 
 // Inicializar SDK (hacer esto una vez al inicio de la app)
 init({
-  apiKey: 'tu_api_key',
+  publicApiKey: 'pk_live_...',
   mode: 'sandbox',
 });
 

@@ -1,5 +1,5 @@
 export interface SDKInitOptions {
-  apiKey: string;
+  publicApiKey: string;
   mode?: 'production' | 'sandbox';
 }
 
@@ -8,7 +8,7 @@ export interface SDKInitOptions {
  */
 class SDKConfig {
   private static instance: SDKConfig;
-  private _apiKey: string | null = null;
+  private _publicApiKey: string | null = null;
   private _mode: 'production' | 'sandbox' = 'production';
 
   private constructor() {}
@@ -21,12 +21,12 @@ class SDKConfig {
   }
 
   init(options: SDKInitOptions): void {
-    this._apiKey = options.apiKey;
+    this._publicApiKey = options.publicApiKey;
     this._mode = options.mode ?? 'production';
   }
 
-  get apiKey(): string | null {
-    return this._apiKey;
+  get publicApiKey(): string | null {
+    return this._publicApiKey;
   }
 
   get mode(): 'production' | 'sandbox' {
@@ -42,14 +42,14 @@ class SDKConfig {
   }
 
   isInitialized(): boolean {
-    return this._apiKey !== null;
+    return this._publicApiKey !== null;
   }
 }
 
 /**
  * Initialize the Bloque Payments SDK
  * @param options - SDK initialization options
- * @param options.apiKey - Your Bloque API key
+ * @param options.publicApiKey - Your Bloque Public API key
  * @param options.mode - Environment mode ('production' or 'sandbox')
  */
 export function init(options: SDKInitOptions): void {

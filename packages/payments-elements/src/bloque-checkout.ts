@@ -285,7 +285,7 @@ export class BloqueCheckout extends LitElement {
       headers: {
         'Content-Type': 'application/json',
         // biome-ignore lint/style/noNonNullAssertion: <explanation>
-        'X-Api-Key': sdkConfig.apiKey!,
+        'X-Api-Key': sdkConfig.publicApiKey!,
       },
       body: JSON.stringify(paymentPayload),
     });

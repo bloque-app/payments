@@ -18,25 +18,61 @@ bun add @bloque/payments-react
 
 ## Inicialización del SDK
 
-Antes de usar el componente `BloqueCheckout`, debes inicializar el SDK con tu API key:
+Antes de usar el componente `BloqueCheckout`, debes inicializar el SDK con tu Public API Key:
 
 ```tsx
 import { init } from '@bloque/payments-react';
 
 // Inicializar una vez al inicio de tu aplicación (ej: en main.tsx o App.tsx)
 init({
-  apiKey: 'tu_api_key',
+  publicApiKey: 'pk_live_...',
   mode: 'sandbox', // o 'production'
 });
 ```
 
-:::warning Seguridad
-Nunca expongas tu API key real en código del lado del cliente en producción. Para aplicaciones en producción, el checkout debe enviar los datos de pago a tu backend usando `onSubmit`, donde el pago se procesa de forma segura con tu API key.
+:::tip Public API Key
+Usa tu **Public API Key** para inicializar el SDK en el frontend. Esta clave es segura para exponer en código del lado del cliente. Tu **Secret API Key** solo debe usarse en el backend.
 :::
 
 ## Uso Básico del Componente
 
-La forma más simple de agregar pagos a tu app React:
+La forma más simple de agregar pagos a tu app React. El componente procesa los pagos directamente con la API de Bloque:
+
+```tsx
+import { init, BloqueCheckout } from '@bloque/payments-react';
+
+// Inicializar una vez al inicio de tu aplicación
+init({
+  publicApiKey: 'pk_live_...',
+  mode: 'production',
+});
+
+function CheckoutPage() {
+  return (
+    <BloqueCheckout
+      config={{
+        payment_methods: ['card', 'pse', 'cash'],
+        amount: 2999,
+        currency: 'USD',
+      }}
+      onSuccess={(response) => {
+        console.log('¡Pago exitoso!', response.id);
+        window.location.href = '/success';
+      }}
+      onError={(error) => {
+        console.error('Pago fallido:', error.message);
+        alert(`Pago fallido: ${error.message}`);
+      }}
+    />
+  );
+}
+
+export default CheckoutPage;
+```
+
+## Uso con Backend Personalizado
+
+Si prefieres procesar los pagos a través de tu propio backend, usa la prop `onSubmit`:
 
 ```tsx
 import { BloqueCheckout } from '@bloque/payments-react';
@@ -81,11 +117,11 @@ export default CheckoutPage;
 
 ## Props del Componente
 
-### Props Requeridas
+### Props Opcionales
 
 #### `onSubmit`
 
-Función llamada cuando el usuario envía el formulario de pago. Debe enviar los datos de pago a tu backend.
+Función llamada cuando el usuario envía el formulario de pago. Si no se proporciona, el componente procesa el pago directamente con la API de Bloque.
 
 ```typescript
 onSubmit?: (payload: PaymentSubmitPayload) => Promise<PaymentResponse | undefined>;
