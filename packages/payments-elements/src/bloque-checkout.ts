@@ -28,6 +28,9 @@ export class BloqueCheckout extends LitElement {
   @state()
   private error: string | null = null;
 
+  @state()
+  private paymentResult: PaymentResponse | null = null;
+
   @property({ type: Object })
   config: CheckoutConfig | null = null;
 
@@ -74,6 +77,14 @@ export class BloqueCheckout extends LitElement {
       this.appearance?.fontFamily ||
       "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif"
     );
+  }
+
+  private formatAmount(amount: number, currency: string): string {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+    }).format(amount);
   }
 
   override connectedCallback() {
@@ -128,9 +139,6 @@ export class BloqueCheckout extends LitElement {
     }
 
     .form-container {
-      margin-top: 24px;
-      padding-top: 24px;
-      border-top: 2px solid #e5e7eb;
       animation: fadeIn 0.3s ease-in;
     }
 
@@ -204,6 +212,122 @@ export class BloqueCheckout extends LitElement {
 
     .form-wrapper {
       position: relative;
+    }
+
+    .secure-payment {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #6b7280;
+      font-size: 13px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .secure-payment svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .success-container {
+      text-align: center;
+      padding: 32px 24px;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      background: #dcfce7;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .success-icon svg {
+      width: 32px;
+      height: 32px;
+      color: #16a34a;
+    }
+
+    .success-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .success-message {
+      font-size: 16px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+
+    .success-details {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: left;
+    }
+
+    .success-detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+
+    .success-detail-row:not(:last-child) {
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .success-detail-label {
+      color: #6b7280;
+    }
+
+    .success-detail-value {
+      color: #111827;
+      font-weight: 500;
+    }
+
+    .pending-container {
+      text-align: center;
+      padding: 32px 24px;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    .pending-icon {
+      width: 64px;
+      height: 64px;
+      background: #fef3c7;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .pending-icon svg {
+      width: 32px;
+      height: 32px;
+      color: #d97706;
+    }
+
+    .pending-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .pending-message {
+      font-size: 16px;
+      color: #6b7280;
+      margin-bottom: 24px;
     }
   `;
 
@@ -319,6 +443,16 @@ export class BloqueCheckout extends LitElement {
         paymentResponse = await this.sendToAPI(payload);
       }
 
+      if (paymentResponse && paymentResponse.status === 'approved') {
+        this.paymentResult = paymentResponse;
+      } else if (paymentResponse && paymentResponse.status === 'pending') {
+        this.paymentResult = paymentResponse;
+      } else if (paymentResponse && paymentResponse.status === 'rejected') {
+        this.error =
+          paymentResponse.message ||
+          'El pago fue rechazado. Por favor, intenta con otro método de pago.';
+      }
+
       if (this.onSuccess && paymentResponse) {
         this.onSuccess(paymentResponse);
       }
@@ -330,7 +464,6 @@ export class BloqueCheckout extends LitElement {
 
       this.error = errorMessage;
 
-      // Llamar a onError si está definida
       if (this.onError) {
         this.onError({
           message: errorMessage,
@@ -353,6 +486,61 @@ export class BloqueCheckout extends LitElement {
     return html`
       <div class="checkout-container" style="${style}">
         ${
+          this.paymentResult?.status === 'approved'
+            ? html`
+            <div class="success-container">
+              <div class="success-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </div>
+              <div class="success-title">${this.config?.labels?.successTitle || '¡Pago realizado correctamente!'}</div>
+              <div class="success-message">${this.config?.labels?.successMessage || 'Tu pago ha sido procesado exitosamente.'}</div>
+              <div class="success-details">
+                <div class="success-detail-row">
+                  <span class="success-detail-label">ID de pago</span>
+                  <span class="success-detail-value">${this.paymentResult.payment_id}</span>
+                </div>
+                <div class="success-detail-row">
+                  <span class="success-detail-label">Referencia</span>
+                  <span class="success-detail-value">${this.paymentResult.reference}</span>
+                </div>
+                <div class="success-detail-row">
+                  <span class="success-detail-label">Monto</span>
+                  <span class="success-detail-value">${this.formatAmount(this.paymentResult.amount, this.paymentResult.currency)}</span>
+                </div>
+              </div>
+            </div>
+          `
+            : this.paymentResult?.status === 'pending'
+              ? html`
+            <div class="pending-container">
+              <div class="pending-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+              </div>
+              <div class="pending-title">${this.config?.labels?.pendingTitle || 'Pago pendiente'}</div>
+              <div class="pending-message">${this.config?.labels?.pendingMessage || 'Te notificaremos por correo electrónico una vez se complete el pago.'}</div>
+              <div class="success-details">
+                <div class="success-detail-row">
+                  <span class="success-detail-label">ID de pago</span>
+                  <span class="success-detail-value">${this.paymentResult.payment_id}</span>
+                </div>
+                <div class="success-detail-row">
+                  <span class="success-detail-label">Referencia</span>
+                  <span class="success-detail-value">${this.paymentResult.reference}</span>
+                </div>
+                <div class="success-detail-row">
+                  <span class="success-detail-label">Monto</span>
+                  <span class="success-detail-value">${this.formatAmount(this.paymentResult.amount, this.paymentResult.currency)}</span>
+                </div>
+              </div>
+            </div>
+          `
+              : html`
+        ${
           this.showMethodSelector && this.effectiveAvailableMethods.length > 1
             ? html`
               <div class="section">
@@ -370,17 +558,16 @@ export class BloqueCheckout extends LitElement {
           this.selectedMethod
             ? html`
               <div class="form-container">
-                ${
-                  this.error
-                    ? html`
+              ${
+                this.error
+                  ? html`
                       <div class="error-banner">
                         <span>⚠️</span>
                         <span>${this.error}</span>
                       </div>
                     `
-                    : ''
-                }
-                <div class="section-title">Completa la información de pago</div>
+                  : ''
+              }
                 <div class="form-wrapper">
                   ${
                     this.isLoading
@@ -415,9 +602,18 @@ export class BloqueCheckout extends LitElement {
                         `
                   }
                 </div>
+                <div class="secure-payment">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0110 0v4"/>
+                  </svg>
+                  <span>${this.config?.labels?.securePaymentText || 'Pago seguro con encriptación SSL'}</span>
+                </div>
               </div>
             `
             : ''
+        }
+        `
         }
       </div>
     `;

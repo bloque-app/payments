@@ -66,6 +66,11 @@ export interface CheckoutLabels {
   card?: CardFormLabels;
   pse?: PSEFormLabels;
   cash?: CashFormLabels;
+  securePaymentText?: string;
+  successTitle?: string;
+  successMessage?: string;
+  pendingTitle?: string;
+  pendingMessage?: string;
 }
 
 export interface CheckoutConfig {
@@ -83,8 +88,11 @@ export interface AppearanceConfig {
 }
 
 export interface PaymentResponse {
-  id: string;
-  status: string;
+  payment_id: string;
+  status: 'approved' | 'pending' | 'rejected';
+  message: string;
   amount: number;
   currency: string;
+  reference: string;
+  created_at: string;
 }
