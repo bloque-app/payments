@@ -43,9 +43,6 @@
     "storybook": "storybook dev",
     "typecheck": "tsgo --noEmit"
   },
-  "dependencies": {
-    "@bloque/payments-elements": "workspace:*"
-  },
   "devDependencies": {
     "@rsbuild/core": "catalog:",
     "@rsbuild/plugin-react": "^1.4.2",

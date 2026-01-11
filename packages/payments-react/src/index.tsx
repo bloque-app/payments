@@ -1,10 +1,11 @@
 export type {
   AppearanceConfig,
+  BloqueCheckoutProps,
   CheckoutConfig,
-  PaymentResponse,
-  PaymentSubmitPayload,
+  CheckoutLang,
+  CheckoutMode,
+  PaymentError,
+  PaymentResult,
   SDKInitOptions,
-} from '@bloque/payments-elements';
-export { init } from '@bloque/payments-elements';
-export type { BloqueCheckoutProps } from './bloque-checkout';
-export { BloqueCheckout } from './bloque-checkout';
+} from './bloque-checkout';
+export { BloqueCheckout, getConfig, init } from './bloque-checkout';
