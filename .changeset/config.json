@@ -6,7 +6,6 @@
     [
       "@bloque/payments-core",
       "@bloque/payments",
-      "@bloque/payments-elements",
       "@bloque/payments-react"
     ]
   ],

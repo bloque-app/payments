@@ -1,6 +1,6 @@
 # @bloque/payments-react
 
-React wrapper for `@bloque/payments-elements` web components.
+React component that embeds the Bloque hosted checkout.
 
 ## Installation
 

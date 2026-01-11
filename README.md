@@ -8,7 +8,6 @@ This monorepo contains the following packages:
 
 - **[@bloque/payments](./packages/payments-sdk)** - SDK for creating and managing payments and checkouts
 - **[@bloque/payments-core](./packages/payments-core)** - Core utilities and types
-- **[@bloque/payments-elements](./packages/payments-elements)** - Framework-agnostic Web Components for embedding payment checkouts
 - **[@bloque/payments-react](./packages/payments-react)** - React wrapper for payment components
 
 ## Installation
@@ -16,9 +15,6 @@ This monorepo contains the following packages:
 ```bash
 # SDK
 npm install @bloque/payments
-
-# Web Components
-npm install @bloque/payments-elements
 
 # React Components
 npm install @bloque/payments-react
