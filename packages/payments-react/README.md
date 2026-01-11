@@ -2,6 +2,10 @@
 
 React component that embeds the Bloque hosted checkout.
 
+## Live Demo
+
+Try the hosted example at [https://bloque-example-payments.pages.dev/](https://bloque-example-payments.pages.dev/).
+
 ## Installation
 
 ```bash

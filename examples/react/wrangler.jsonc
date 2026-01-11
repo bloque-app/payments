@@ -1,0 +1,10 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bloque-example-payments",
+  "compatibility_date": "2026-01-07",
+  "pages_build_output_dir": "./dist"
+}
