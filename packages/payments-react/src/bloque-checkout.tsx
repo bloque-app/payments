@@ -94,27 +94,49 @@ export interface CheckoutConfig {
 }
 
 export interface BloqueCheckoutProps {
-  /** Checkout configuration with amount and optional settings */
+  /**
+   * Checkout configuration with amount and optional settings
+   */
   config: CheckoutConfig;
-  /** Appearance customization (colors, fonts, etc.) */
+  /**
+   * Appearance customization (colors, fonts, etc.)
+   */
   appearance?: AppearanceConfig;
-  /** Your Bloque public API key. Optional if init() was called. */
+  /**
+   * Your Bloque public API key. Optional if init() was called.
+   */
   publicApiKey?: string;
-  /** Language: 'es' (Spanish) or 'en' (English). Default: 'es' */
+  /**
+   * Language: 'es' (Spanish) or 'en' (English). Default: 'es'
+   */
   lang?: CheckoutLang;
-  /** Operation mode: 'sandbox' or 'production'. Default: 'production' */
+  /**
+   * Operation mode: 'sandbox' or 'production'. Default: 'production'
+   */
   mode?: CheckoutMode;
-  /** Callback when payment is successful */
+  /**
+   * Callback when payment is successful
+   */
   onSuccess?: (result: PaymentResult) => void;
-  /** Callback when payment fails */
+  /**
+   * Callback when payment fails
+   */
   onError?: (error: PaymentError) => void;
-  /** Additional CSS class name */
+  /**
+   * Additional CSS class name
+   */
   className?: string;
-  /** Additional inline styles */
+  /**
+   * Additional inline styles
+   */
   style?: React.CSSProperties;
-  /** iframe width. Default: '100%' */
+  /**
+   * iframe width. Default: '100%'
+   */
   width?: string | number;
-  /** iframe height. Default: '600px' */
+  /**
+   * iframe height. Default: '600px'
+   */
   height?: string | number;
 }
 
