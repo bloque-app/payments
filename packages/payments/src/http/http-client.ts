@@ -11,7 +11,7 @@ const SDK_VERSION = pkg.version;
 
 export interface HttpClientConfig {
   baseURL: string;
-  apiKey: string;
+  accessToken: string;
   timeout?: number;
   maxRetries?: number;
   userAgent?: string;
@@ -28,14 +28,14 @@ export interface RequestOptions {
 
 export class HttpClient {
   private readonly baseURL: string;
-  private readonly apiKey: string;
+  private readonly accessToken: string;
   private readonly timeout: number;
   private readonly maxRetries: number;
   private readonly userAgent: string;
 
   constructor(config: HttpClientConfig) {
     this.baseURL = config.baseURL;
-    this.apiKey = config.apiKey;
+    this.accessToken = config.accessToken;
     this.timeout = config.timeout ?? 10_000;
     this.maxRetries = config.maxRetries ?? 2;
     this.userAgent = `${SDK_NAME}/${SDK_VERSION}`;
@@ -113,7 +113,7 @@ export class HttpClient {
     idempotencyKey?: string,
   ): Record<string, string> {
     return {
-      Authorization: `Bearer ${this.apiKey}`,
+      Authorization: `Bearer ${this.accessToken}`,
       'Content-Type': 'application/json',
       'User-Agent': this.userAgent,
       ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),

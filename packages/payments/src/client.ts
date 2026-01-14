@@ -5,7 +5,7 @@ import { WebhookResource } from './resources/webhook';
 
 export type BloqueConfig = {
   mode: 'sandbox' | 'production';
-  apiKey: string;
+  accessToken: string;
   timeout?: number;
   maxRetries?: number;
   webhookSecret?: string;
@@ -20,7 +20,7 @@ export class Bloque {
   public webhooks!: WebhookResource;
 
   constructor(config: BloqueConfig) {
-    if (!config.apiKey) {
+    if (!config.accessToken) {
       throw new Error('API key is required');
     }
     this.#config = config;
@@ -30,7 +30,7 @@ export class Bloque {
         this.#config.mode === 'sandbox'
           ? 'https://dev.bloque.app/api/payments'
           : 'https://api.bloque.app/api/payments',
-      apiKey: this.#config.apiKey,
+      accessToken: this.#config.accessToken,
       timeout: this.#config.timeout,
       maxRetries: this.#config.maxRetries,
     });

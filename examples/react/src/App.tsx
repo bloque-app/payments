@@ -5,10 +5,10 @@ import './App.css';
 import {
   type AppearanceConfig,
   BloqueCheckout,
-  type CheckoutConfig,
   init,
 } from '../../../packages/payments-react/src/index';
 
+// Initialize BloqueCheckout with your public API key and mode
 init({
   publicApiKey:
     'pk_test_51NCIz2Fq3Y6V1gX3r1Y2x5ZK0j3h4g5h6i7j8k9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z4a5b6c7d8e9f0g1h2i3j4k5l6',
@@ -28,9 +28,9 @@ const product = {
 };
 
 const App = () => {
-  const config: CheckoutConfig = {
-    amount: product.price,
-  };
+  // In a real application, you would get this checkoutId from your backend
+  // after creating a checkout session with the product details
+  const checkoutId = 'checkout_123';
 
   const appearance: AppearanceConfig = {
     primaryColor: '#6366f1',
@@ -180,7 +180,7 @@ const App = () => {
 
               <div className="checkout-form">
                 <BloqueCheckout
-                  config={config}
+                  checkoutId={checkoutId}
                   appearance={appearance}
                   onSuccess={(response) => {
                     console.log('Payment successful!');
@@ -188,8 +188,8 @@ const App = () => {
                     console.log('Status:', response.status);
                   }}
                   onError={(error) => {
-                    console.error('Payment failed:', error.message);
-                    alert(`Error en el pago: ${error.message}`);
+                    console.error('Payment failed:', error);
+                    alert(`Error en el pago: ${error}`);
                   }}
                 />
               </div>

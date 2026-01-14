@@ -58,6 +58,9 @@
     "storybook-react-rsbuild": "^3.1.0",
     "typescript": "catalog:"
   },
+  "dependencies": {
+    "@bloque/payments-core": "workspace:*"
+  },
   "peerDependencies": {
     "react": ">=16.9.0",
     "react-dom": ">=16.9.0"
