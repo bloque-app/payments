@@ -22,7 +22,7 @@ npm install @bloque/payments-react
 
 ## Live Demo
 
-Explore the hosted example at [https://bloque-example-payments.pages.dev/](https://bloque-example-payments.pages.dev/).
+Explore the hosted example at [https://bloque-example-payments.pages.dev](https://bloque-example-payments.pages.dev).
 
 ## Development
 
