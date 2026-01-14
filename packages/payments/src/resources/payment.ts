@@ -1,11 +1,9 @@
 import type {
   CardPaymentFormData,
-  CashPaymentFormData,
   CreatePaymentParams,
   PaymentResponse,
   PaymentSubmitPayload,
-  PSEPaymentFormData,
-} from '@bloque/payments-core';
+} from '../types/payment';
 import { BaseResource } from './base';
 
 export class PaymentResource extends BaseResource {
@@ -50,10 +48,6 @@ export class PaymentResource extends BaseResource {
     switch (payment.type) {
       case 'card':
         return this.buildCardPayload(payment.data);
-      case 'pse':
-        return this.buildPSEPayload(payment.data);
-      case 'cash':
-        return this.buildCashPayload(payment.data);
     }
   }
 
@@ -65,25 +59,6 @@ export class PaymentResource extends BaseResource {
       exp_month: data.expiryMonth,
       exp_year: data.expiryYear,
       card_holder: data.cardholderName,
-    };
-  }
-
-  private buildPSEPayload(data: PSEPaymentFormData): Record<string, string> {
-    return {
-      customer_email: data.email,
-      person_type: data.personType,
-      document_type: data.documentType,
-      document_number: data.documentNumber,
-      bank_code: data.bankCode,
-    };
-  }
-
-  private buildCashPayload(data: CashPaymentFormData): Record<string, string> {
-    return {
-      customer_email: data.email,
-      document_type: data.documentType,
-      document_number: data.documentNumber,
-      full_name: data.fullName,
     };
   }
 }

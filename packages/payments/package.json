@@ -45,9 +45,6 @@
     "check": "biome check --write",
     "typecheck": "tsgo --noEmit"
   },
-  "dependencies": {
-    "@bloque/payments-core": "workspace:*"
-  },
   "devDependencies": {
     "@rslib/core": "catalog:",
     "@types/node": "catalog:",
