@@ -10,17 +10,13 @@ Usa el prop `appearance` para personalizar colores, bordes y fuentes:
 import { BloqueCheckout } from '@bloque/payments-react';
 
 <BloqueCheckout
-  config={{
-    payment_methods: ['card', 'pse'],
-    amount: 2999,
-    currency: 'USD',
-  }}
+  checkoutId={checkoutId}
   appearance={{
     primaryColor: '#10b981',
     borderRadius: '12px',
     fontFamily: 'Inter, system-ui, sans-serif',
   }}
-  onSubmit={handleSubmit}
+  onSuccess={handleSuccess}
 />
 ```
 
@@ -115,28 +111,41 @@ function CheckoutPage() {
 
   return (
     <BloqueCheckout
-      config={{
-        payment_methods: ['card', 'pse', 'cash'],
-        amount: 2999,
-        currency: 'USD',
-      }}
+      checkoutId={checkoutId}
       appearance={appearance}
-      onSubmit={handleSubmit}
+      onSuccess={handleSuccess}
     />
   );
 }
 ```
 
-## Personalización con CSS
+## Estilos del Iframe
 
-Para estilos más avanzados, usa el prop `className`:
+Para estilos más avanzados del contenedor del iframe, usa el prop `iframeStyles`:
 
 ```tsx
 <BloqueCheckout
-  config={config}
+  checkoutId={checkoutId}
+  appearance={appearance}
+  iframeStyles={{
+    height: '700px',
+    borderRadius: '16px',
+    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+  }}
+  onSuccess={handleSuccess}
+/>
+```
+
+## Personalización con CSS
+
+Para estilizar el contenedor, usa el prop `className`:
+
+```tsx
+<BloqueCheckout
+  checkoutId={checkoutId}
   appearance={appearance}
   className="custom-checkout"
-  onSubmit={handleSubmit}
+  onSuccess={handleSuccess}
 />
 ```
 
@@ -154,11 +163,11 @@ Luego agrega CSS personalizado:
 
 ## Estilos Inline
 
-Usa el prop `style` para estilos inline:
+Usa el prop `style` para estilos inline en el contenedor:
 
 ```tsx
 <BloqueCheckout
-  config={config}
+  checkoutId={checkoutId}
   appearance={appearance}
   style={{
     maxWidth: '600px',
@@ -168,7 +177,7 @@ Usa el prop `style` para estilos inline:
     borderRadius: '8px',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
   }}
-  onSubmit={handleSubmit}
+  onSuccess={handleSuccess}
 />
 ```
 
@@ -178,13 +187,13 @@ Usa el prop `style` para estilos inline:
 
 ```tsx
 <BloqueCheckout
-  config={config}
+  checkoutId={checkoutId}
   appearance={{
     primaryColor: '#6366f1',
     borderRadius: '12px',
     fontFamily: "'Inter', system-ui, sans-serif",
   }}
-  onSubmit={handleSubmit}
+  onSuccess={handleSuccess}
 />
 ```
 
@@ -192,13 +201,13 @@ Usa el prop `style` para estilos inline:
 
 ```tsx
 <BloqueCheckout
-  config={config}
+  checkoutId={checkoutId}
   appearance={{
     primaryColor: '#f59e0b',
     borderRadius: '8px',
     fontFamily: "'Poppins', sans-serif",
   }}
-  onSubmit={handleSubmit}
+  onSuccess={handleSuccess}
 />
 ```
 
@@ -206,13 +215,13 @@ Usa el prop `style` para estilos inline:
 
 ```tsx
 <BloqueCheckout
-  config={config}
+  checkoutId={checkoutId}
   appearance={{
     primaryColor: '#0f766e',
     borderRadius: '4px',
     fontFamily: "'IBM Plex Sans', sans-serif",
   }}
-  onSubmit={handleSubmit}
+  onSuccess={handleSuccess}
 />
 ```
 
@@ -220,13 +229,13 @@ Usa el prop `style` para estilos inline:
 
 ```tsx
 <BloqueCheckout
-  config={config}
+  checkoutId={checkoutId}
   appearance={{
     primaryColor: '#ec4899',
     borderRadius: '24px',
     fontFamily: "'Quicksand', sans-serif",
   }}
-  onSubmit={handleSubmit}
+  onSuccess={handleSuccess}
 />
 ```
 
@@ -238,7 +247,7 @@ Cambia la apariencia según las preferencias del usuario:
 import { useState } from 'react';
 import { BloqueCheckout } from '@bloque/payments-react';
 
-function CheckoutPage() {
+function CheckoutPage({ checkoutId }) {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   const appearance = {
@@ -253,9 +262,9 @@ function CheckoutPage() {
         Cambiar Tema
       </button>
       <BloqueCheckout
-        config={config}
+        checkoutId={checkoutId}
         appearance={appearance}
-        onSubmit={handleSubmit}
+        onSuccess={handleSuccess}
       />
     </div>
   );
@@ -265,4 +274,4 @@ function CheckoutPage() {
 ## Próximos Pasos
 
 - [Integración React](/pay/guide/react/basic-setup) - Aprende la configuración básica
-- [Métodos de Pago](/pay/guide/payments/methods) - Configura métodos de pago
+- [API de Checkout](/pay/guide/checkout/overview) - Crea páginas de checkout alojadas

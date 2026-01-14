@@ -10,7 +10,7 @@ Crea una sesión de checkout con items y URLs de redirección:
 import { Bloque } from '@bloque/payments';
 
 const bloque = new Bloque({
-  apiKey: process.env.BLOQUE_API_KEY!,
+  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
   mode: 'production',
 });
 
@@ -27,7 +27,6 @@ const checkout = await bloque.checkout.create({
     },
   ],
   success_url: 'https://tuapp.com/success',
-  cancel_url: 'https://tuapp.com/cancel',
 });
 
 console.log('URL de Checkout:', checkout.url);
@@ -43,7 +42,6 @@ console.log('URL de Checkout:', checkout.url);
   name: string;              // Nombre del checkout
   items: CheckoutItem[];     // Items a comprar
   success_url: string;       // URL de redirección después de éxito
-  cancel_url: string;        // URL de redirección después de cancelación
 }
 ```
 
@@ -93,7 +91,6 @@ const checkout = await bloque.checkout.create({
     },
   ],
   success_url: 'https://tuapp.com/success?session_id={CHECKOUT_SESSION_ID}',
-  cancel_url: 'https://tuapp.com/cancel',
   metadata: {
     user_id: '12345',
     campaign: 'summer_sale',

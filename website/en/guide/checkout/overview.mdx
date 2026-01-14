@@ -10,7 +10,7 @@ Create a checkout session with items and redirect URLs:
 import { Bloque } from '@bloque/payments';
 
 const bloque = new Bloque({
-  apiKey: process.env.BLOQUE_API_KEY!,
+  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
   mode: 'production',
 });
 
@@ -27,7 +27,6 @@ const checkout = await bloque.checkout.create({
     },
   ],
   success_url: 'https://yourapp.com/success',
-  cancel_url: 'https://yourapp.com/cancel',
 });
 
 console.log('Checkout URL:', checkout.url);
@@ -43,7 +42,6 @@ console.log('Checkout URL:', checkout.url);
   name: string;              // Checkout name
   items: CheckoutItem[];     // Items to purchase
   success_url: string;       // Redirect URL after success
-  cancel_url: string;        // Redirect URL after cancellation
 }
 ```
 
@@ -93,7 +91,6 @@ const checkout = await bloque.checkout.create({
     },
   ],
   success_url: 'https://yourapp.com/success?session_id={CHECKOUT_SESSION_ID}',
-  cancel_url: 'https://yourapp.com/cancel',
   metadata: {
     user_id: '12345',
     campaign: 'summer_sale',

@@ -7,7 +7,7 @@ hero:
   text: |
     Infraestructura de Pagos para Desarrolladores
     Simple, Rápida y Segura
-  tagline: Acepta pagos con tarjetas, PSE y efectivo con un poderoso SDK de React e integración backend
+  tagline: Acepta pagos con tarjetas con un poderoso SDK de React e integración backend
   actions:
     - theme: brand
       text: Introducción
@@ -19,8 +19,8 @@ hero:
     src: /bloque-icon.png
     alt: Logo de Bloque Payments
 features:
-  - title: Múltiples Métodos de Pago
-    details: Acepta pagos con tarjeta, PSE (banca en línea colombiana) y pagos en efectivo a través de una API unificada.
+  - title: Pagos con Tarjeta
+    details: Acepta pagos con tarjetas de crédito y débito de las principales redes (Visa, Mastercard, American Express, Diners Club) a través de una API unificada.
     icon: 💳
   - title: Componentes React
     details: Componentes React pre-construidos para integración perfecta con tu aplicación. Personaliza la apariencia para que coincida con tu marca.
@@ -31,9 +31,9 @@ features:
   - title: Seguro por Defecto
     details: Infraestructura compatible con PCI con cifrado de extremo a extremo, verificación de webhooks y gestión segura de claves API.
     icon: 🔒
-  - title: Enfoque en Mercado Colombiano
-    details: Soporte nativo para PSE, redes de pago en efectivo y pesos colombianos (COP) con requisitos de cumplimiento locales.
-    icon: 🇨🇴
+  - title: Pagos Globales
+    details: Acepta pagos con tarjeta de cualquier parte del mundo. Soporte para múltiples monedas.
+    icon: 🌍
   - title: Listo para Producción
     details: Probado en batalla con manejo integral de errores, registro detallado y soporte de webhooks para actualizaciones en tiempo real.
     icon: ✅

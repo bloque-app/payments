@@ -20,7 +20,7 @@ const app = express();
 
 // Initialize SDK with webhook secret
 const bloque = new Bloque({
-  apiKey: process.env.BLOQUE_API_KEY!,
+  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
   mode: 'production',
   webhookSecret: process.env.BLOQUE_WEBHOOK_SECRET,
 });
@@ -173,7 +173,7 @@ import express from 'express';
 const app = express();
 
 const bloque = new Bloque({
-  apiKey: process.env.BLOQUE_API_KEY!,
+  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
   mode: 'production',
   webhookSecret: process.env.BLOQUE_WEBHOOK_SECRET,
 });

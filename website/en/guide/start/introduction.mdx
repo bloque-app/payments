@@ -1,50 +1,65 @@
 # Introduction
 
-Welcome to Bloque Payments documentation. Bloque provides a comprehensive payment infrastructure that enables developers to accept payments through multiple methods including cards, PSE (Colombian online banking), and cash payments.
+Welcome to Bloque Payments documentation. Bloque provides a comprehensive payment infrastructure that enables developers to accept credit and debit card payments.
 
 ## What is Bloque Payments?
 
-Bloque Payments is a TypeScript-first payment processing platform that simplifies payment integration into your web and mobile applications. It provides both backend SDKs for secure payment processing and frontend components for seamless user experiences.
+Bloque Payments is a TypeScript-first payment processing platform that simplifies payment integration into your web applications. It provides a backend SDK for secure payment processing and React components for seamless checkout experiences using a hosted checkout page.
 
 ## Key Features
 
-### 💳 Multiple Payment Methods
+### Hosted Checkout
 
-Accept payments through various channels:
-- **Card Payments**: Credit and debit cards
-- **PSE**: Colombian online banking system
-- **Cash Payments**: Generate receipts for physical payment locations
+Bloque uses a secure hosted checkout approach where payments are processed through an iframe. This ensures PCI compliance without handling sensitive card data on your servers.
 
-### ⚛️ React Integration
+```
+1. Your backend creates a checkout session
+   ↓
+2. Backend receives checkout_id
+   ↓
+3. Pass checkout_id to React component
+   ↓
+4. Component renders iframe with the checkout
+   ↓
+5. User completes payment
+   ↓
+6. Callbacks are triggered
+```
+
+### React Integration
 
 Pre-built React components for quick integration:
 
 ```tsx
-import { BloqueCheckout } from '@bloque/payments-react';
+import { init, BloqueCheckout } from '@bloque/payments-react';
+
+init({
+  publicApiKey: 'pk_live_...',
+  mode: 'production',
+});
 
 <BloqueCheckout
-  config={config}
-  appearance={appearance}
-  onSuccess={(response) => {
-    console.log('Payment successful!', response.id);
+  checkoutId={checkoutId}
+  onSuccess={(data) => {
+    console.log('Payment successful!', data.payment_id);
   }}
   onError={(error) => {
-    console.error('Payment failed:', error.message);
+    console.error('Payment failed:', error);
   }}
 />
 ```
 
-### 🔒 Secure by Default
+### Secure by Default
 
 PCI-compliant infrastructure with:
-- End-to-end encryption
+- Hosted checkout iframe (card data never touches your servers)
 - Secure API key management
 - Webhook signature verification
-- No sensitive data stored on your servers
+- End-to-end encryption
 
-### 🎨 Customizable UI
+### Customizable UI
 
-Customize the payment experience to match your brand:
+Customize the checkout appearance to match your brand:
 
 ```typescript
 const appearance = {
@@ -54,91 +69,82 @@ const appearance = {
 };
 ```
 
-### 📱 Type-Safe
+### Type-Safe
 
 Built with TypeScript from the ground up:
 - Full type definitions included
-- Discriminated union types for payment methods
 - IntelliSense support in modern editors
 - Compile-time type checking
 
 ## Architecture
 
-Bloque Payments follows a secure architecture pattern where sensitive payment data never touches your backend:
+Bloque Payments follows a secure architecture pattern:
 
 ```
 ┌─────────────────┐      ┌─────────────────┐      ┌──────────────┐
-│ React Component │─────▶│  Your Backend   │─────▶│  Bloque API  │
-│  (Frontend)     │      │   (SDK Usage)   │      │              │
+│ Your Backend    │─────▶│  Bloque API     │─────▶│ Checkout ID  │
+│ (@bloque/pay)   │      │                 │      │              │
 └─────────────────┘      └─────────────────┘      └──────────────┘
+                                                         │
+                                                         ▼
+                         ┌─────────────────────────────────────────┐
+                         │  React Component + Hosted Checkout      │
+                         │  (@bloque/payments-react)               │
+                         └─────────────────────────────────────────┘
 ```
 
-1. **Frontend** captures payment data securely
-2. **Your Backend** processes payments using Bloque SDK
-3. **Bloque API** handles payment processing and verification
-
-## Use Cases
-
-### E-commerce Platforms
-
-Build online stores with seamless checkout experiences and support for multiple payment methods.
-
-### SaaS Applications
-
-Accept subscription payments and one-time purchases directly in your application.
-
-### Marketplace Platforms
-
-Enable sellers and buyers to transact securely with instant payment processing and automated settlement.
-
-### Mobile Applications
-
-Integrate payments into React Native apps using the same components and API.
+1. **Your Backend** creates checkout sessions using the Bloque SDK
+2. **Bloque API** returns a checkout ID
+3. **Frontend** renders the hosted checkout in an iframe
+4. **User** completes payment securely
 
 ## Packages
 
-The Bloque Payments ecosystem consists of three main packages:
+The Bloque Payments ecosystem consists of two main packages:
 
 ```
 @bloque/payments          # Backend SDK for Node.js/Bun
-@bloque/payments-react    # React components
-@bloque/payments-elements # Web Components (standalone)
+@bloque/payments-react    # React components with hosted checkout
 ```
 
 ### Backend SDK (`@bloque/payments`)
 
-Server-side SDK for creating checkouts and processing payments:
+Server-side SDK for creating checkouts:
 
 ```typescript
 import { Bloque } from '@bloque/payments';
 
 const bloque = new Bloque({
-  apiKey: process.env.BLOQUE_API_KEY!,
+  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
   mode: 'production',
 });
 
-const payment = await bloque.payments.create({
-  payment: payload,
+const checkout = await bloque.checkout.create({
+  name: 'My Product',
+  items: [{ name: 'Product', amount: 2999, quantity: 1 }],
+  success_url: 'https://yourapp.com/success',
 });
+
+console.log('Checkout ID:', checkout.id);
 ```
 
 ### React Components (`@bloque/payments-react`)
 
-Pre-built React components for payment forms:
+Hosted checkout component for React:
 
 ```tsx
-import { BloqueCheckout } from '@bloque/payments-react';
+import { init, BloqueCheckout } from '@bloque/payments-react';
+
+init({
+  publicApiKey: 'pk_live_...',
+  mode: 'production',
+});
 
 <BloqueCheckout
-  config={config}
-  onSubmit={handleSubmit}
+  checkoutId={checkoutId}
   onSuccess={handleSuccess}
 />
 ```
-
-### Web Components (`@bloque/payments-elements`)
-
-Framework-agnostic web components for vanilla JavaScript, Vue, Svelte, and more.
 
 ## Why Bloque Payments?
 
@@ -158,18 +164,10 @@ Framework-agnostic web components for vanilla JavaScript, Vue, Svelte, and more.
 
 ### Flexible Integration
 
-- Works with any JavaScript framework
-- Supports Node.js, Bun, and Deno
-- Browser and React Native compatible
+- Works with React and Next.js
+- Supports Node.js and Bun
 - Minimal dependencies
 
-### Colombian Market Focus
-
-Native support for Colombian payment methods:
-- PSE integration for online banking
-- Cash payment network integration
-- Colombian peso (COP) support
-- Local compliance requirements
 
 ## Next Steps
 
@@ -177,5 +175,5 @@ Ready to integrate payments? Follow our Quick Start guide to accept your first p
 
 - [Quick Start](/pay/guide/start/getting-started) - Get up and running quickly
 - [React Integration](/pay/guide/react/basic-setup) - Use BloqueCheckout component
-- [Payment Methods](/pay/guide/payments/methods) - Learn about available payment options
+- [Checkout API](/pay/guide/checkout/overview) - Create hosted checkout pages
 - [Webhooks](/pay/guide/webhooks/setup) - Handle payment events

@@ -16,9 +16,27 @@ pnpm add @bloque/payments-react
 bun add @bloque/payments-react
 ```
 
+## How It Works
+
+The `BloqueCheckout` component renders an iframe with the Bloque hosted checkout page. The flow is:
+
+```
+1. Your backend creates a checkout session using @bloque/payments
+   ↓
+2. Backend receives checkout_id
+   ↓
+3. Pass checkout_id to React component
+   ↓
+4. Component renders iframe with the checkout
+   ↓
+5. User completes payment
+   ↓
+6. onSuccess/onError/onPending callbacks are triggered
+```
+
 ## SDK Initialization
 
-Before using the `BloqueCheckout` component, you need to initialize the SDK with your Public API Key:
+Before using the `BloqueCheckout` component, initialize the SDK with your Public API Key:
 
 ```tsx
 import { init } from '@bloque/payments-react';
@@ -34,9 +52,7 @@ init({
 Use your **Public API Key** to initialize the SDK in the frontend. This key is safe to expose in client-side code. Your **Secret API Key** should only be used on the backend.
 :::
 
-## Basic Component Usage
-
-The simplest way to add payments to your React app. The component processes payments directly with the Bloque API:
+## Basic Usage
 
 ```tsx
 import { init, BloqueCheckout } from '@bloque/payments-react';
@@ -47,21 +63,21 @@ init({
   mode: 'production',
 });
 
-function CheckoutPage() {
+interface CheckoutPageProps {
+  // checkoutId is generated on the backend using @bloque/payments
+  checkoutId: string;
+}
+
+function CheckoutPage({ checkoutId }: CheckoutPageProps) {
   return (
     <BloqueCheckout
-      config={{
-        payment_methods: ['card', 'pse', 'cash'],
-        amount: 2999,
-        currency: 'USD',
-      }}
-      onSuccess={(response) => {
-        console.log('Payment successful!', response.id);
+      checkoutId={checkoutId}
+      onSuccess={(data) => {
+        console.log('Payment successful!', data.payment_id);
         window.location.href = '/success';
       }}
       onError={(error) => {
-        console.error('Payment failed:', error.message);
-        alert(`Payment failed: ${error.message}`);
+        console.error('Payment failed:', error);
       }}
     />
   );
@@ -70,392 +86,140 @@ function CheckoutPage() {
 export default CheckoutPage;
 ```
 
-## Usage with Custom Backend
+## Backend Setup
 
-If you prefer to process payments through your own backend, use the `onSubmit` prop:
+Create a checkout session on your backend using `@bloque/payments`:
 
-```tsx
-import { BloqueCheckout } from '@bloque/payments-react';
+```typescript
+import { Bloque } from '@bloque/payments';
+import express from 'express';
 
-function CheckoutPage() {
-  const handleSubmit = async (payload) => {
-    const response = await fetch('/api/payments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+const app = express();
+app.use(express.json());
+
+const bloque = new Bloque({
+  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  mode: 'production',
+});
+
+app.post('/api/create-checkout', async (req, res) => {
+  try {
+    const checkout = await bloque.checkout.create({
+      name: 'My Product',
+      items: [{ name: 'Product', amount: 2999, quantity: 1 }],
+      success_url: 'https://yourapp.com/success',
     });
 
-    if (!response.ok) {
-      throw new Error('Payment failed');
-    }
+    res.json({ id: checkout.id });
+  } catch (error) {
+    console.error('Error creating checkout:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
-    return response.json();
-  };
-
-  return (
-    <BloqueCheckout
-      config={{
-        payment_methods: ['card', 'pse', 'cash'],
-        amount: 2999,
-        currency: 'USD',
-      }}
-      onSubmit={handleSubmit}
-      onSuccess={(response) => {
-        console.log('Payment successful!', response.id);
-        window.location.href = '/success';
-      }}
-      onError={(error) => {
-        console.error('Payment failed:', error.message);
-        alert(`Payment failed: ${error.message}`);
-      }}
-    />
-  );
-}
-
-export default CheckoutPage;
+app.listen(3000);
 ```
 
 ## Component Props
 
-### Optional Props
+### `BloqueCheckout`
 
-#### `onSubmit`
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `checkoutId` | `string` | Yes | Checkout session ID from your backend |
+| `onSuccess` | `(data: PaymentResult) => void` | No | Called when payment is successful |
+| `onError` | `(error: string) => void` | No | Called when payment fails |
+| `onPending` | `(data: PaymentResult) => void` | No | Called when payment is pending |
+| `onReady` | `() => void` | No | Called when checkout iframe is ready |
+| `publicApiKey` | `string` | No | Public API key (optional if you called `init()`) |
+| `mode` | `'production' \| 'sandbox'` | No | Environment mode (optional if you called `init()`) |
+| `checkoutUrl` | `string` | No | Custom checkout URL |
+| `appearance` | `AppearanceConfig` | No | UI customization |
+| `iframeStyles` | `Record<string, string>` | No | Custom CSS styles for the iframe |
+| `className` | `string` | No | CSS class for the container div |
+| `style` | `React.CSSProperties` | No | Inline styles for the container div |
 
-Function called when the user submits the payment form. If not provided, the component processes the payment directly with the Bloque API.
-
-```typescript
-onSubmit?: (payload: PaymentSubmitPayload) => Promise<PaymentResponse | undefined>;
-```
-
-**Example:**
-
-```tsx
-const handleSubmit = async (payload) => {
-  const response = await fetch('/api/payments', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Payment failed');
-  }
-
-  return response.json();
-};
-
-<BloqueCheckout onSubmit={handleSubmit} />
-```
-
-### Optional Props
-
-#### `config`
-
-Configuration object for the checkout experience:
-
-```typescript
-interface CheckoutConfig {
-  payment_methods?: PaymentMethodType[];  // ['card', 'pse', 'cash']
-  amount?: number;                         // Amount in smallest currency unit
-  currency?: string;                       // Currency code (e.g., 'USD')
-  labels?: CheckoutLabels;                 // Custom text labels
-}
-```
-
-**Example:**
-
-```tsx
-<BloqueCheckout
-  config={{
-    payment_methods: ['card', 'pse'],
-    amount: 2999,
-    currency: 'USD',
-  }}
-  onSubmit={handleSubmit}
-/>
-```
-
-#### `config.labels`
-
-Customize the payment form text labels:
-
-```typescript
-interface CheckoutLabels {
-  card?: CardFormLabels;
-  pse?: PSEFormLabels;
-  cash?: CashFormLabels;
-}
-
-interface CardFormLabels {
-  cardNumber?: string;
-  cardNumberPlaceholder?: string;
-  cardholderName?: string;
-  cardholderNamePlaceholder?: string;
-  expiryDate?: string;
-  expiryDatePlaceholder?: string;
-  cvv?: string;
-  cvvPlaceholder?: string;
-  email?: string;
-  emailPlaceholder?: string;
-  submitButton?: string;
-}
-```
-
-**Example with custom labels:**
-
-```tsx
-<BloqueCheckout
-  config={{
-    payment_methods: ['card', 'pse'],
-    amount: 4999,
-    currency: 'USD',
-    labels: {
-      card: {
-        cardNumber: 'Card Number',
-        cardNumberPlaceholder: '1234 5678 9012 3456',
-        cardholderName: 'Cardholder Name',
-        cardholderNamePlaceholder: 'JOHN DOE',
-        expiryDate: 'Expiry Date',
-        expiryDatePlaceholder: 'MM/YY',
-        cvv: 'CVV',
-        cvvPlaceholder: '123',
-        email: 'Email',
-        emailPlaceholder: 'example@email.com',
-        submitButton: 'Pay $49.99',
-      },
-    },
-  }}
-  onSubmit={handleSubmit}
-/>
-```
-
-#### `appearance`
-
-Customize the visual appearance:
+### `AppearanceConfig`
 
 ```typescript
 interface AppearanceConfig {
-  primaryColor?: string;    // Brand color
-  borderRadius?: string;    // Border radius for inputs
-  fontFamily?: string;      // Font family
+  primaryColor?: string;    // Brand color (e.g., '#6366f1')
+  borderRadius?: string;    // Border radius (e.g., '12px')
+  fontFamily?: string;      // Font family (e.g., 'Inter, system-ui, sans-serif')
 }
 ```
 
-**Example:**
+### `PaymentResult`
+
+```typescript
+interface PaymentResult {
+  payment_id: string;
+  status: 'approved' | 'pending' | 'rejected';
+  message: string;
+  amount: number;
+  currency: string;
+  reference: string;
+  created_at: string;
+}
+```
+
+## Examples
+
+### With Custom Appearance
 
 ```tsx
 <BloqueCheckout
-  config={config}
+  checkoutId={checkoutId}
   appearance={{
     primaryColor: '#10b981',
     borderRadius: '12px',
     fontFamily: 'Inter, system-ui, sans-serif',
   }}
-  onSubmit={handleSubmit}
-/>
-```
-
-#### `amount`
-
-Alternative way to set the amount (instead of using `config.amount`):
-
-```tsx
-<BloqueCheckout
-  amount={2999}
-  config={{
-    payment_methods: ['card'],
-    currency: 'USD',
+  onSuccess={(data) => {
+    console.log('Payment successful!', data);
   }}
-  onSubmit={handleSubmit}
 />
 ```
 
-#### `availableMethods`
-
-Array of payment methods to show (alternative to `config.payment_methods`):
+### With All Callbacks
 
 ```tsx
 <BloqueCheckout
-  availableMethods={['card', 'pse']}
-  onSubmit={handleSubmit}
-/>
-```
-
-#### `requireEmail`
-
-Whether email is required for card payments (default: `true`):
-
-```tsx
-<BloqueCheckout
-  requireEmail={true}
-  config={{ payment_methods: ['card'] }}
-  onSubmit={handleSubmit}
-/>
-```
-
-#### `showMethodSelector`
-
-Show/hide the payment method selector (default: `true`):
-
-```tsx
-<BloqueCheckout
-  showMethodSelector={true}
-  config={{ payment_methods: ['card', 'pse'] }}
-  onSubmit={handleSubmit}
-/>
-```
-
-#### `onSuccess`
-
-Callback fired when payment succeeds:
-
-```tsx
-<BloqueCheckout
-  config={config}
-  onSubmit={handleSubmit}
-  onSuccess={(response) => {
-    console.log('Payment successful!');
-    console.log('Payment ID:', response.id);
-    console.log('Status:', response.status);
+  checkoutId={checkoutId}
+  onReady={() => {
+    console.log('Checkout is ready');
+  }}
+  onSuccess={(data) => {
+    console.log('Payment approved!', data);
     window.location.href = '/success';
   }}
-/>
-```
-
-#### `onError`
-
-Callback fired when payment fails:
-
-```tsx
-<BloqueCheckout
-  config={config}
-  onSubmit={handleSubmit}
+  onPending={(data) => {
+    console.log('Payment pending...', data);
+  }}
   onError={(error) => {
-    console.error('Payment failed:', error.message);
-    alert(`Payment failed: ${error.message}`);
+    console.error('Payment failed:', error);
   }}
 />
 ```
 
-#### `className` and `style`
-
-Standard React props for styling:
+### Custom Styling
 
 ```tsx
 <BloqueCheckout
-  config={config}
-  onSubmit={handleSubmit}
+  checkoutId={checkoutId}
+  onSuccess={handleSuccess}
   className="my-checkout"
-  style={{ maxWidth: '600px', margin: '0 auto' }}
+  style={{
+    maxWidth: '600px',
+    margin: '0 auto',
+    padding: '20px',
+  }}
+  iframeStyles={{
+    height: '700px',
+    borderRadius: '16px',
+    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+  }}
 />
-```
-
-## Complete Example
-
-Here's a complete example with all common options:
-
-```tsx
-import { BloqueCheckout } from '@bloque/payments-react';
-import type {
-  CheckoutConfig,
-  AppearanceConfig,
-  PaymentResponse,
-} from '@bloque/payments-react';
-
-function CheckoutPage() {
-  // Configuration
-  const config: CheckoutConfig = {
-    payment_methods: ['card', 'pse', 'cash'],
-    amount: 2999,
-    currency: 'USD',
-  };
-
-  // Appearance
-  const appearance: AppearanceConfig = {
-    primaryColor: '#10b981',
-    borderRadius: '12px',
-    fontFamily: 'Inter, system-ui, sans-serif',
-  };
-
-  // Submit handler
-  const handleSubmit = async (payload) => {
-    try {
-      const response = await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Payment failed');
-      }
-
-      return response.json();
-    } catch (error) {
-      console.error('Payment error:', error);
-      throw error;
-    }
-  };
-
-  // Success handler
-  const handleSuccess = (response: PaymentResponse) => {
-    console.log('Payment successful!');
-    console.log('Payment ID:', response.id);
-    console.log('Status:', response.status);
-    window.location.href = `/success?payment=${response.id}`;
-  };
-
-  // Error handler
-  const handleError = (error: { message: string }) => {
-    console.error('Payment failed:', error.message);
-    alert(`Payment failed: ${error.message}`);
-  };
-
-  return (
-    <div className="checkout-container">
-      <h1>Checkout</h1>
-      <BloqueCheckout
-        config={config}
-        appearance={appearance}
-        onSubmit={handleSubmit}
-        onSuccess={handleSuccess}
-        onError={handleError}
-        className="checkout-form"
-        style={{ maxWidth: '600px' }}
-      />
-    </div>
-  );
-}
-
-export default CheckoutPage;
-```
-
-## TypeScript Support
-
-The package includes full TypeScript definitions:
-
-```typescript
-import type {
-  BloqueCheckoutProps,
-  CheckoutConfig,
-  AppearanceConfig,
-  PaymentResponse,
-  PaymentSubmitPayload,
-  PaymentMethodType,
-} from '@bloque/payments-react';
-
-// Type-safe configuration
-const config: CheckoutConfig = {
-  payment_methods: ['card', 'pse'],
-  amount: 2999,
-  currency: 'USD',
-};
-
-// Type-safe handlers
-const handleSuccess = (response: PaymentResponse) => {
-  console.log('Payment ID:', response.id);
-};
 ```
 
 ## Framework-Specific Examples
@@ -465,26 +229,34 @@ const handleSuccess = (response: PaymentResponse) => {
 ```tsx
 'use client';
 
-import { BloqueCheckout } from '@bloque/payments-react';
+import { init, BloqueCheckout } from '@bloque/payments-react';
+import { useState, useEffect } from 'react';
+
+init({
+  publicApiKey: 'pk_live_...',
+  mode: 'production',
+});
 
 export default function CheckoutPage() {
-  const handleSubmit = async (payload) => {
-    const response = await fetch('/api/payments', {
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/create-checkout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    return response.json();
-  };
+      body: JSON.stringify({ amount: 5000 }),
+    })
+      .then(res => res.json())
+      .then(data => setCheckoutId(data.id));
+  }, []);
+
+  if (!checkoutId) return <div>Loading...</div>;
 
   return (
     <BloqueCheckout
-      config={{
-        payment_methods: ['card', 'pse'],
-        amount: 2999,
-        currency: 'USD',
+      checkoutId={checkoutId}
+      onSuccess={(data) => {
+        console.log('Success!', data);
       }}
-      onSubmit={handleSubmit}
     />
   );
 }
@@ -493,63 +265,61 @@ export default function CheckoutPage() {
 ### Next.js Pages Router
 
 ```tsx
-import { BloqueCheckout } from '@bloque/payments-react';
+import { init, BloqueCheckout } from '@bloque/payments-react';
+import { useState, useEffect } from 'react';
 
-export default function Checkout() {
-  const handleSubmit = async (payload) => {
-    const response = await fetch('/api/payments', {
+init({
+  publicApiKey: 'pk_live_...',
+  mode: 'production',
+});
+
+export default function CheckoutPage() {
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/create-checkout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    return response.json();
-  };
+      body: JSON.stringify({ amount: 5000 }),
+    })
+      .then(res => res.json())
+      .then(data => setCheckoutId(data.id));
+  }, []);
+
+  if (!checkoutId) return <div>Loading...</div>;
 
   return (
     <BloqueCheckout
-      config={{
-        payment_methods: ['card'],
-        amount: 2999,
-        currency: 'USD',
+      checkoutId={checkoutId}
+      onSuccess={(data) => {
+        console.log('Success!', data);
       }}
-      onSubmit={handleSubmit}
     />
   );
 }
 ```
 
-### Vite + React
+## TypeScript Support
 
-```tsx
-import { BloqueCheckout } from '@bloque/payments-react';
+The package includes full TypeScript definitions:
 
-function App() {
-  const handleSubmit = async (payload) => {
-    const response = await fetch('http://localhost:3000/api/payments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    return response.json();
-  };
+```typescript
+import { BloqueCheckout, init } from '@bloque/payments-react';
+import type {
+  BloqueCheckoutProps,
+  AppearanceConfig,
+  PaymentResult,
+} from '@bloque/payments-react';
 
-  return (
-    <BloqueCheckout
-      config={{
-        payment_methods: ['card', 'pse', 'cash'],
-        amount: 2999,
-        currency: 'USD',
-      }}
-      onSubmit={handleSubmit}
-    />
-  );
-}
-
-export default App;
+const handleSuccess = (result: PaymentResult) => {
+  console.log('Payment ID:', result.payment_id);
+  console.log('Amount:', result.amount);
+  console.log('Currency:', result.currency);
+  console.log('Status:', result.status);
+};
 ```
 
 ## Next Steps
 
 - [Customization](/pay/guide/react/customization) - Customize the UI
-- [Payment Methods](/pay/guide/payments/methods) - Learn about available payment methods
+- [Checkout API](/pay/guide/checkout/overview) - Learn more about the Checkout API
 - [Webhooks](/pay/guide/webhooks/setup) - Handle payment notifications

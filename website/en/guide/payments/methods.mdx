@@ -1,6 +1,6 @@
 # Payment Methods
 
-Bloque Payments supports multiple payment methods to give your customers flexibility in how they pay.
+Bloque Payments currently supports card payments to process transactions securely.
 
 ## Available Payment Methods
 
@@ -20,310 +20,124 @@ Accept credit and debit card payments from major card networks.
 - Automatic card validation
 - CVV verification
 
-**Integration Example:**
+## How It Works
 
-```tsx
-import { BloqueCheckout } from '@bloque/payments-react';
+Payment methods are handled automatically through Bloque's hosted checkout. Your integration flow is simple:
 
-<BloqueCheckout
-  config={{
-    payment_methods: ['card'],
-    amount: 1999,
-    currency: 'USD',
-  }}
-  requireEmail={true}
-  onSubmit={handleSubmit}
-/>
+```
+1. Your backend creates a checkout session
+   ↓
+2. Backend receives checkout_id
+   ↓
+3. Pass checkout_id to BloqueCheckout component
+   ↓
+4. Component renders iframe with hosted checkout
+   ↓
+5. User enters card details and completes payment
+   ↓
+6. onSuccess/onError callbacks are triggered
 ```
 
-**Card Payment Data:**
+## Integration
+
+### Backend (Create Checkout)
 
 ```typescript
-{
-  type: 'card',
-  data: {
-    cardNumber: string;        // 16-digit card number
-    cardholderName: string;    // Name on card
-    expiryMonth: string;       // MM format
-    expiryYear: string;        // YY or YYYY format
-    cvv: string;               // 3-4 digit security code
-    email?: string;            // Customer email (optional)
-  }
+import { Bloque } from '@bloque/payments';
+
+const bloque = new Bloque({
+  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  mode: 'production',
+});
+
+const checkout = await bloque.checkout.create({
+  name: 'My Product',
+  description: 'Product description',
+  items: [
+    {
+      name: 'Product',
+      amount: 2999,
+      quantity: 1,
+    },
+  ],
+  success_url: 'https://yourapp.com/success',
+});
+
+// Send checkout.id to frontend
+res.json({ id: checkout.id });
+```
+
+### Frontend (React)
+
+```tsx
+import { init, BloqueCheckout } from '@bloque/payments-react';
+
+init({
+  publicApiKey: 'pk_live_...',
+  mode: 'production',
+});
+
+interface CheckoutPageProps {
+  // checkoutId is generated on the backend using @bloque/payments
+  checkoutId: string;
+}
+
+function CheckoutPage({ checkoutId }: CheckoutPageProps) {
+  return (
+    <BloqueCheckout
+      checkoutId={checkoutId}
+      onSuccess={(data) => {
+        console.log('Payment successful!', data.payment_id);
+        window.location.href = '/success';
+      }}
+      onError={(error) => {
+        console.error('Payment failed:', error);
+      }}
+    />
+  );
 }
 ```
 
-### PSE (Colombian Online Banking)
+## Card Payment Flow
 
-PSE (Pagos Seguros en Línea) is Colombia's most popular online banking payment method.
-
-**Features:**
-- Direct bank account transfers
-- Real-time payment confirmation
-- Support for all major Colombian banks
-- Secure authentication through bank portals
-
-**Integration Example:**
-
-```tsx
-<BloqueCheckout
-  config={{
-    payment_methods: ['pse'],
-    amount: 1999,
-    currency: 'USD',
-  }}
-  onSubmit={handleSubmit}
-/>
-```
-
-**PSE Payment Data:**
-
-```typescript
-{
-  type: 'pse',
-  data: {
-    personType: 'natural' | 'juridica';  // Person or company
-    documentType: string;                 // ID type (CC, NIT, etc.)
-    documentNumber: string;               // ID number
-    bankCode: string;                     // Bank identifier
-    email: string;                        // Customer email
-  }
-}
-```
-
-**Supported Banks:**
-
-The component automatically loads all available Colombian banks. Some popular ones include:
-- Bancolombia
-- Banco de Bogotá
-- BBVA Colombia
-- Davivienda
-- Banco de Occidente
-
-### Cash Payments
-
-Generate payment receipts for customers to pay at physical locations.
-
-**Features:**
-- Generate unique payment codes
-- Multiple payment locations
-- Extended payment deadlines
-- Automatic confirmation
-
-**Integration Example:**
-
-```tsx
-<BloqueCheckout
-  config={{
-    payment_methods: ['cash'],
-    amount: 1999,
-    currency: 'USD',
-  }}
-  onSubmit={handleSubmit}
-/>
-```
-
-**Cash Payment Data:**
-
-```typescript
-{
-  type: 'cash',
-  data: {
-    email: string;            // Customer email
-    documentType: string;     // ID type
-    documentNumber: string;   // ID number
-    fullName: string;         // Full name
-  }
-}
-```
-
-**Payment Locations:**
-
-Cash payments can be made at various locations including:
-- Efecty
-- Baloto
-- Su Red
-- Apostar
-- Paga Todo
-
-## Configuring Available Methods
-
-You can configure which payment methods to offer:
-
-### All Methods (Default)
-
-```tsx
-<BloqueCheckout
-  config={{
-    payment_methods: ['card', 'pse', 'cash'],
-    amount: 1999,
-    currency: 'USD',
-  }}
-  onSubmit={handleSubmit}
-/>
-```
-
-### Cards Only
-
-```tsx
-<BloqueCheckout
-  config={{
-    payment_methods: ['card'],
-    amount: 1999,
-    currency: 'USD',
-  }}
-  requireEmail={true}
-  onSubmit={handleSubmit}
-/>
-```
-
-### PSE Only
-
-```tsx
-<BloqueCheckout
-  config={{
-    payment_methods: ['pse'],
-    amount: 1999,
-    currency: 'USD',
-  }}
-  onSubmit={handleSubmit}
-/>
-```
-
-### Cards and PSE
-
-```tsx
-<BloqueCheckout
-  config={{
-    payment_methods: ['card', 'pse'],
-    amount: 1999,
-    currency: 'USD',
-  }}
-  onSubmit={handleSubmit}
-/>
-```
-
-## Payment Method Selection
-
-The `BloqueCheckout` component includes a built-in payment method selector when multiple methods are available:
-
-```tsx
-<BloqueCheckout
-  config={{
-    payment_methods: ['card', 'pse', 'cash'],
-    amount: 1999,
-    currency: 'USD',
-  }}
-  showMethodSelector={true}  // Show method selector (default)
-  onSubmit={handleSubmit}
-/>
-```
-
-To hide the selector and default to the first method:
-
-```tsx
-<BloqueCheckout
-  config={{
-    payment_methods: ['card'],
-    amount: 1999,
-    currency: 'USD',
-  }}
-  showMethodSelector={false}  // Hide selector
-  onSubmit={handleSubmit}
-/>
-```
-
-## Payment Flow by Method
-
-### Card Payment Flow
-
-1. Customer enters card details
-2. Client-side validation
-3. Submit to your backend
-4. Backend processes with Bloque API
-5. Real-time authorization
-6. Success/failure response
-
-### PSE Payment Flow
-
-1. Customer selects bank
-2. Customer enters identification
-3. Submit to your backend
-4. Backend creates PSE transaction
-5. Customer redirected to bank
-6. Bank authentication
-7. Payment confirmation
-8. Webhook notification
-
-### Cash Payment Flow
-
-1. Customer enters personal details
-2. Submit to your backend
-3. Backend generates payment code
-4. Customer receives payment instructions
-5. Customer pays at physical location
-6. Webhook notification on payment
+1. User selects card payment in hosted checkout
+2. User enters card details
+3. Real-time authorization is processed
+4. `onSuccess` or `onError` callback is triggered
 
 ## Handling Payment Responses
 
-All payment methods use the same response structure:
+The `BloqueCheckout` component provides callbacks for different outcomes:
 
 ```tsx
 <BloqueCheckout
-  config={config}
-  onSubmit={async (payload) => {
-    const response = await fetch('/api/payments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    return response.json();
+  checkoutId={checkoutId}
+  onReady={() => {
+    console.log('Checkout ready');
   }}
-  onSuccess={(response) => {
-    console.log('Payment ID:', response.id);
-    console.log('Status:', response.status);
-    console.log('Method:', response.payment_method);
-
-    // Redirect based on method
-    if (response.payment_method === 'pse') {
-      // PSE requires redirect
-      window.location.href = response.redirect_url;
-    } else {
-      // Other methods complete immediately
-      window.location.href = '/success';
-    }
+  onSuccess={(data) => {
+    console.log('Payment ID:', data.payment_id);
+    console.log('Status:', data.status);
+    console.log('Amount:', data.amount);
+    console.log('Currency:', data.currency);
+    window.location.href = '/success';
   }}
   onError={(error) => {
-    console.error('Payment failed:', error.message);
+    console.error('Error:', error);
   }}
 />
-```
-
-## Currency Support
-
-Currently supported currency:
-
-- **COP** (Colombian Peso)
-
-All amounts should be specified in the smallest currency unit (cents for COP):
-
-```typescript
-// $19.99 USD = 1999 cents
-const config = {
-  amount: 1999,
-  currency: 'USD',
-};
 ```
 
 ## Security
 
-All payment methods are processed securely:
+Card payments are processed securely:
 
-- **Card payments**: PCI-DSS compliant, card data never touches your servers
-- **PSE payments**: Bank-level security with direct authentication
-- **Cash payments**: Secure code generation and validation
+- **PCI-DSS compliant**: Card data never touches your servers
+- **3D Secure**: Additional authentication layer for secure transactions
+- **Encryption**: End-to-end encryption for all sensitive data
 
 ## Next Steps
 
-- [React Integration](/pay/guide/react/basic-setup) - Set up BloqueCheckout component
+- [React Integration](/pay/guide/react/basic-setup) - Set up the BloqueCheckout component
 - [Webhooks](/pay/guide/webhooks/setup) - Handle payment notifications
 - [Error Handling](/pay/guide/advanced/error-handling) - Handle payment errors

@@ -7,65 +7,87 @@ Learn how to handle errors gracefully in Bloque Payments.
 Bloque Payments can return different types of errors:
 
 - **Validation errors**: Invalid input data
-- **Authentication errors**: Invalid or missing API key
+- **Authentication errors**: Invalid or missing access token
 - **Payment errors**: Payment processing failures
 - **Network errors**: Connection issues
 
 ## Frontend Error Handling
 
-Use the `onError` callback to handle errors in React:
+Use the `onError` callback to handle errors in the React component:
 
 ```tsx
-<BloqueCheckout
-  config={config}
-  onSubmit={handleSubmit}
-  onError={(error) => {
-    console.error('Payment failed:', error.message);
+import { init, BloqueCheckout } from '@bloque/payments-react';
 
-    // Show user-friendly message
-    if (error.type === 'card_declined') {
-      alert('Your card was declined. Please try another payment method.');
-    } else if (error.type === 'insufficient_funds') {
-      alert('Insufficient funds. Please try another card.');
-    } else {
-      alert(`Payment failed: ${error.message}`);
-    }
-  }}
-/>
+init({
+  publicApiKey: 'pk_live_...',
+  mode: 'production',
+});
+
+function CheckoutPage({ checkoutId }) {
+  return (
+    <BloqueCheckout
+      checkoutId={checkoutId}
+      onSuccess={(data) => {
+        console.log('Payment successful!', data.payment_id);
+        window.location.href = '/success';
+      }}
+      onError={(error) => {
+        console.error('Payment failed:', error);
+
+        // Show user-friendly message
+        alert(`Payment failed: ${error}`);
+      }}
+      onPending={(data) => {
+        console.log('Payment pending:', data.payment_id);
+        window.location.href = '/pending';
+      }}
+    />
+  );
+}
 ```
 
 ## Backend Error Handling
 
-Handle errors in your payment endpoint:
+Handle errors when creating checkouts:
 
 ```typescript
-app.post('/api/payments', async (req, res) => {
-  try {
-    const payload = req.body;
+import { Bloque } from '@bloque/payments';
+import express from 'express';
 
-    const payment = await bloque.payments.create({
-      payment: payload,
+const app = express();
+app.use(express.json());
+
+const bloque = new Bloque({
+  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  mode: 'production',
+});
+
+app.post('/api/create-checkout', async (req, res) => {
+  try {
+    const checkout = await bloque.checkout.create({
+      name: req.body.name,
+      items: req.body.items,
+      success_url: req.body.success_url,
     });
 
-    res.json(payment);
+    res.json({ id: checkout.id, url: checkout.url });
   } catch (error) {
-    console.error('Payment error:', error);
+    console.error('Checkout error:', error);
 
     // Determine error type
     if (error.status === 400) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid payment data',
+        error: 'Invalid checkout data',
         message: error.message,
       });
     }
 
-    if (error.status === 402) {
-      return res.status(402).json({
+    if (error.status === 401) {
+      return res.status(401).json({
         success: false,
-        error: 'Payment failed',
-        message: error.message,
-        code: error.code,
+        error: 'Unauthorized',
+        message: 'Invalid access token',
       });
     }
 
@@ -76,6 +98,8 @@ app.post('/api/payments', async (req, res) => {
     });
   }
 });
+
+app.listen(3000);
 ```
 
 ## Common Error Codes
@@ -88,70 +112,19 @@ app.post('/api/payments', async (req, res) => {
 - `invalid_expiry`: Invalid expiration date
 - `invalid_cvv`: Invalid security code
 
-### PSE Errors
-
-- `bank_unavailable`: Bank system unavailable
-- `transaction_cancelled`: User cancelled transaction
-- `authentication_failed`: Authentication failed
-
 ### General Errors
 
 - `invalid_amount`: Invalid payment amount
 - `invalid_currency`: Unsupported currency
 - `expired_checkout`: Checkout session expired
 
-## Retry Logic
-
-Implement retry logic for transient errors:
-
-```typescript
-async function processPaymentWithRetry(payload, maxRetries = 3) {
-  let lastError;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        return response.json();
-      }
-
-      const error = await response.json();
-
-      // Don't retry on validation errors
-      if (response.status === 400) {
-        throw new Error(error.message);
-      }
-
-      lastError = error;
-
-      // Wait before retrying
-      if (attempt < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-      }
-    } catch (error) {
-      if (attempt === maxRetries) {
-        throw error;
-      }
-      lastError = error;
-    }
-  }
-
-  throw lastError;
-}
-```
-
 ## User-Friendly Messages
 
 Provide clear, actionable error messages:
 
 ```typescript
-function getErrorMessage(error) {
-  switch (error.code) {
+function getErrorMessage(errorCode: string): string {
+  switch (errorCode) {
     case 'card_declined':
       return 'Your card was declined. Please try another payment method or contact your bank.';
 
@@ -170,77 +143,12 @@ function getErrorMessage(error) {
     case 'bank_unavailable':
       return 'The selected bank is temporarily unavailable. Please try again later.';
 
+    case 'expired_checkout':
+      return 'The payment session has expired. Please start a new one.';
+
     default:
       return 'Payment failed. Please try again or contact support.';
   }
-}
-```
-
-## Complete Error Handling Example
-
-```tsx
-import { BloqueCheckout } from '@bloque/payments-react';
-import { useState } from 'react';
-
-function CheckoutPage() {
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (payload) => {
-    setError(null);
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Payment failed');
-      }
-
-      return response.json();
-    } catch (err) {
-      console.error('Payment error:', err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleError = (error) => {
-    console.error('Payment failed:', error);
-    setError(getErrorMessage(error));
-  };
-
-  return (
-    <div>
-      {error && (
-        <div className="error-banner">
-          {error}
-        </div>
-      )}
-
-      <BloqueCheckout
-        config={{
-          payment_methods: ['card', 'pse'],
-          amount: 2999,
-          currency: 'USD',
-        }}
-        onSubmit={handleSubmit}
-        onError={handleError}
-        onSuccess={() => {
-          setError(null);
-          window.location.href = '/success';
-        }}
-      />
-
-      {loading && <div>Processing payment...</div>}
-    </div>
-  );
 }
 ```
 
