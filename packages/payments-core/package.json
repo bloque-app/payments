@@ -1,6 +1,6 @@
 {
   "name": "@bloque/payments-core",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Core utilities and types for Bloque Payments.",
   "type": "module",
   "keywords": [

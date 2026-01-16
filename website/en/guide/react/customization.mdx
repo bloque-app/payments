@@ -119,6 +119,22 @@ function CheckoutPage() {
 }
 ```
 
+## Payment Options
+
+### `showInstallments`
+
+Enable installment payment options in the checkout:
+
+```tsx
+<BloqueCheckout
+  checkoutId={checkoutId}
+  showInstallments
+  onSuccess={handleSuccess}
+/>
+```
+
+When enabled, users will see available installment plans during checkout.
+
 ## Iframe Styling
 
 For more advanced styling of the iframe container, use the `iframeStyles` prop:

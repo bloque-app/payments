@@ -66,6 +66,12 @@ export interface BloqueCheckoutOptions {
   appearance?: AppearanceConfig;
 
   /**
+   * Whether to show installment options in the checkout
+   * @default false
+   */
+  showInstallments?: boolean;
+
+  /**
    * Callback fired when the checkout iframe is ready to receive the checkout ID
    */
   onReady?: () => void;

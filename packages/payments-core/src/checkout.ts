@@ -65,6 +65,7 @@ export class BloqueCheckout {
       mode,
       checkoutUrl,
       appearance: options.appearance,
+      showInstallments: options.showInstallments,
       onReady: options.onReady,
       onSuccess: options.onSuccess,
       onError: options.onError,
@@ -81,8 +82,9 @@ export class BloqueCheckout {
     this.iframe = document.createElement('iframe');
 
     let iframeUrl = this.options.checkoutUrl;
+    const params = new URLSearchParams();
+
     if (this.options.appearance) {
-      const params = new URLSearchParams();
       if (this.options.appearance.primaryColor) {
         params.set('primaryColor', this.options.appearance.primaryColor);
       }
@@ -92,10 +94,15 @@ export class BloqueCheckout {
       if (this.options.appearance.fontFamily) {
         params.set('fontFamily', this.options.appearance.fontFamily);
       }
-      const queryString = params.toString();
-      if (queryString) {
-        iframeUrl = `${iframeUrl}?${queryString}`;
-      }
+    }
+
+    if (this.options.showInstallments) {
+      params.set('showInstallments', 'true');
+    }
+
+    const queryString = params.toString();
+    if (queryString) {
+      iframeUrl = `${iframeUrl}?${queryString}`;
     }
 
     this.iframe.src = iframeUrl;

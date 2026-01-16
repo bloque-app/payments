@@ -119,6 +119,22 @@ function CheckoutPage() {
 }
 ```
 
+## Opciones de Pago
+
+### `showInstallments`
+
+Habilita las opciones de pago en cuotas en el checkout:
+
+```tsx
+<BloqueCheckout
+  checkoutId={checkoutId}
+  showInstallments
+  onSuccess={handleSuccess}
+/>
+```
+
+Cuando está habilitado, los usuarios verán los planes de cuotas disponibles durante el checkout.
+
 ## Estilos del Iframe
 
 Para estilos más avanzados del contenedor del iframe, usa el prop `iframeStyles`:
