@@ -1,0 +1,80 @@
+# Playground
+
+import { CheckoutCustomizer } from '@theme';
+
+Experimenta con las opciones de personalizacion del checkout en tiempo real. Usa el configurador interactivo para ajustar colores, estilos y opciones, y observa como se vera tu checkout antes de integrarlo.
+
+## Configurador Interactivo
+
+Modifica los valores en el panel izquierdo y haz clic en "Actualizar Checkout" para ver los cambios reflejados en la vista previa.
+
+<CheckoutCustomizer />
+
+## Opciones Disponibles
+
+### Monto y Moneda
+
+Configura el monto a cobrar y la moneda. Las monedas disponibles son:
+- **USD** - Dolar Estadounidense
+- **COP** - Peso Colombiano
+
+### Idioma
+
+El checkout soporta multiples idiomas:
+- **Espanol** - Interfaz en espanol
+- **Ingles** - Interfaz en ingles
+
+### Personalizacion Visual
+
+| Opcion | Descripcion |
+|--------|-------------|
+| `primaryColor` | Color principal usado en botones y elementos destacados |
+| `borderRadius` | Radio de borde para inputs y botones (ej: `8px`, `12px`) |
+
+### Opciones de Formulario
+
+| Opcion | Descripcion |
+|--------|-------------|
+| `requireEmail` | Si esta activo, el formulario solicitara el email del cliente |
+
+## Integracion en tu Proyecto
+
+Una vez que hayas encontrado la configuracion ideal, puedes aplicarla en tu componente React:
+
+```tsx
+import { BloqueCheckout } from '@bloque/payments-react';
+
+function CheckoutPage({ checkoutId }: { checkoutId: string }) {
+  return (
+    <BloqueCheckout
+      checkoutId={checkoutId}
+      appearance={{
+        primaryColor: '#4f46e5',  // Tu color elegido
+        borderRadius: '8px',      // Tu border radius elegido
+      }}
+      onSuccess={(data) => {
+        console.log('Pago exitoso!', data.payment_id);
+      }}
+      onError={(error) => {
+        console.error('Error en pago:', error);
+      }}
+    />
+  );
+}
+```
+
+## Eventos del Checkout
+
+El checkout emite eventos que puedes capturar:
+
+| Evento | Descripcion |
+|--------|-------------|
+| `payment-result` | Emitido cuando el pago se completa exitosamente |
+| `payment-error` | Emitido cuando ocurre un error en el pago |
+
+En el playground, estos eventos se muestran en el panel de "Resultado del Pago" debajo del configurador.
+
+## Siguiente Paso
+
+- [Configuracion Basica](/pay/guide/react/basic-setup) - Aprende a integrar el componente en tu aplicacion
+- [Personalizacion](/pay/guide/react/customization) - Opciones avanzadas de personalizacion
