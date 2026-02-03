@@ -3,11 +3,6 @@ pageType: home
 titleSuffix: 'Payment Infrastructure'
 
 hero:
-  name: Bloque Payments
-  text: |
-    Payment Infrastructure for Developers
-    Simple, Fast, and Secure
-  tagline: Accept card payments with a powerful React SDK and backend integration
   actions:
     - theme: brand
       text: Introduction
@@ -15,9 +10,6 @@ hero:
     - theme: alt
       text: Quick Start
       link: /pay/guide/start/getting-started
-  image:
-    src: /bloque-icon.png
-    alt: Bloque Payments Logo
 features:
   - title: Card Payments
     details: Accept credit and debit card payments from major networks (Visa, Mastercard, American Express, Diners Club) through a unified API.

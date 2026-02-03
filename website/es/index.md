@@ -3,11 +3,6 @@ pageType: home
 titleSuffix: 'Infraestructura de Pagos'
 
 hero:
-  name: Bloque Payments
-  text: |
-    Infraestructura de Pagos para Desarrolladores
-    Simple, Rápida y Segura
-  tagline: Acepta pagos con tarjetas con un poderoso SDK de React e integración backend
   actions:
     - theme: brand
       text: Introducción
@@ -15,9 +10,6 @@ hero:
     - theme: alt
       text: Inicio Rápido
       link: /pay/guide/start/getting-started
-  image:
-    src: /bloque-icon.png
-    alt: Logo de Bloque Payments
 features:
   - title: Pagos con Tarjeta
     details: Acepta pagos con tarjetas de crédito y débito de las principales redes (Visa, Mastercard, American Express, Diners Club) a través de una API unificada.
