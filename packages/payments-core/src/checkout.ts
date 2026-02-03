@@ -2,6 +2,7 @@ import type {
   BloqueCheckoutOptions,
   BloqueInitOptions,
   CheckoutMessage,
+  PaymentMethod,
   PaymentResult,
 } from './types';
 
@@ -15,6 +16,7 @@ export class BloqueCheckout {
     checkoutUrl: string;
     mode: 'production' | 'sandbox';
     publicApiKey: string;
+    paymentMethods: PaymentMethod[];
   };
   private messageListener: ((event: MessageEvent) => void) | null = null;
   private isReady = false;
@@ -66,6 +68,7 @@ export class BloqueCheckout {
       checkoutUrl,
       appearance: options.appearance,
       showInstallments: options.showInstallments,
+      paymentMethods: options.paymentMethods || ['card'],
       onReady: options.onReady,
       onSuccess: options.onSuccess,
       onError: options.onError,
@@ -98,6 +101,10 @@ export class BloqueCheckout {
 
     if (this.options.showInstallments) {
       params.set('showInstallments', 'true');
+    }
+
+    if (this.options.paymentMethods && this.options.paymentMethods.length > 0) {
+      params.set('paymentMethods', this.options.paymentMethods.join(','));
     }
 
     const queryString = params.toString();

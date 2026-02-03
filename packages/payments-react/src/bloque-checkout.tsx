@@ -53,6 +53,7 @@ export function BloqueCheckout({
   checkoutUrl,
   appearance,
   showInstallments,
+  paymentMethods,
   onReady,
   onSuccess,
   onError,
@@ -74,6 +75,7 @@ export function BloqueCheckout({
       checkoutUrl,
       appearance,
       showInstallments,
+      paymentMethods,
       onReady,
       onSuccess,
       onError,
@@ -96,6 +98,7 @@ export function BloqueCheckout({
     checkoutUrl,
     appearance,
     showInstallments,
+    paymentMethods,
     onReady,
     onSuccess,
     onError,
@@ -110,6 +113,7 @@ export type {
   AppearanceConfig,
   BloqueCheckoutOptions,
   BloqueInitOptions,
+  PaymentMethod,
   PaymentResult,
 } from '@bloque/payments-core';
 // Re-export types and utilities from core for convenience

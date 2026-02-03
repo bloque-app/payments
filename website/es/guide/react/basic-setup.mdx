@@ -136,6 +136,7 @@ app.listen(3000);
 | `checkoutUrl` | `string` | No | URL de checkout personalizada |
 | `appearance` | `AppearanceConfig` | No | Personalización de UI |
 | `showInstallments` | `boolean` | No | Mostrar opciones de pago en cuotas |
+| `paymentMethods` | `PaymentMethod[]` | No | Métodos de pago a mostrar (default: `['card']`) |
 | `iframeStyles` | `Record<string, string>` | No | Estilos CSS personalizados para el iframe |
 | `className` | `string` | No | Clase CSS para el div contenedor |
 | `style` | `React.CSSProperties` | No | Estilos inline para el div contenedor |
@@ -164,6 +165,17 @@ interface PaymentResult {
 }
 ```
 
+### `PaymentMethod`
+
+```typescript
+type PaymentMethod = 'card' | 'pse';
+```
+
+| Valor | Descripción |
+|-------|-------------|
+| `card` | Pago con tarjeta de crédito/débito |
+| `pse` | Pago por PSE (transferencia bancaria Colombia) |
+
 ## Ejemplos
 
 ### Con Apariencia Personalizada
@@ -176,6 +188,28 @@ interface PaymentResult {
     borderRadius: '12px',
     fontFamily: 'Inter, system-ui, sans-serif',
   }}
+  onSuccess={(data) => {
+    console.log('¡Pago exitoso!', data);
+  }}
+/>
+```
+
+### Con Métodos de Pago Específicos
+
+```tsx
+// Solo PSE
+<BloqueCheckout
+  checkoutId={checkoutId}
+  paymentMethods={['pse']}
+  onSuccess={(data) => {
+    console.log('¡Pago exitoso!', data);
+  }}
+/>
+
+// Tarjeta y PSE
+<BloqueCheckout
+  checkoutId={checkoutId}
+  paymentMethods={['card', 'pse']}
   onSuccess={(data) => {
     console.log('¡Pago exitoso!', data);
   }}
@@ -308,6 +342,7 @@ import { BloqueCheckout, init } from '@bloque/payments-react';
 import type {
   BloqueCheckoutProps,
   AppearanceConfig,
+  PaymentMethod,
   PaymentResult,
 } from '@bloque/payments-react';
 

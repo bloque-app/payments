@@ -5,5 +5,6 @@ export type {
   BloqueInitOptions,
   CheckoutMessage,
   CheckoutMessageType,
+  PaymentMethod,
   PaymentResult,
 } from './types';

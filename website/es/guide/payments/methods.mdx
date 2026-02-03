@@ -1,10 +1,10 @@
 # Métodos de Pago
 
-Bloque Payments actualmente soporta pagos con tarjeta para procesar transacciones de forma segura.
+Bloque Payments soporta múltiples métodos de pago para procesar transacciones de forma segura.
 
 ## Métodos de Pago Disponibles
 
-### Pagos con Tarjeta
+### Pagos con Tarjeta (`card`)
 
 Acepta pagos con tarjetas de crédito y débito de las principales redes.
 
@@ -19,6 +19,16 @@ Acepta pagos con tarjetas de crédito y débito de las principales redes.
 - Soporte 3D Secure
 - Validación automática de tarjeta
 - Verificación CVV
+
+### PSE (`pse`)
+
+Acepta pagos por transferencia bancaria en Colombia a través de PSE (Pagos Seguros en Línea).
+
+**Características:**
+- Transferencia bancaria directa
+- Disponible para todos los bancos en Colombia
+- Confirmación en tiempo real o pendiente según el banco
+- Sin necesidad de tarjeta de crédito
 
 ## Cómo Funciona
 
@@ -98,12 +108,60 @@ function CheckoutPage({ checkoutId }: CheckoutPageProps) {
 }
 ```
 
+## Filtrar Métodos de Pago
+
+Puedes controlar qué métodos de pago se muestran en el checkout usando la propiedad `paymentMethods`:
+
+```tsx
+// Solo tarjeta (default)
+<BloqueCheckout
+  checkoutId={checkoutId}
+  paymentMethods={['card']}
+  onSuccess={handleSuccess}
+/>
+
+// Solo PSE
+<BloqueCheckout
+  checkoutId={checkoutId}
+  paymentMethods={['pse']}
+  onSuccess={handleSuccess}
+/>
+
+// Ambos métodos
+<BloqueCheckout
+  checkoutId={checkoutId}
+  paymentMethods={['card', 'pse']}
+  onSuccess={handleSuccess}
+/>
+```
+
+| Valor | Descripción |
+|-------|-------------|
+| `card` | Pago con tarjeta de crédito/débito |
+| `pse` | Pago por PSE (transferencia bancaria Colombia) |
+
+:::tip
+Si no especificas `paymentMethods`, por defecto solo se mostrará el pago con tarjeta (`['card']`).
+:::
+
 ## Flujo de Pago con Tarjeta
 
 1. Usuario selecciona pago con tarjeta en el checkout alojado
 2. Usuario ingresa detalles de tarjeta
 3. Se procesa la autorización en tiempo real
 4. Se dispara callback `onSuccess` o `onError`
+
+## Flujo de Pago con PSE
+
+1. Usuario selecciona PSE en el checkout alojado
+2. Usuario selecciona su banco
+3. Usuario es redirigido al portal de su banco
+4. Usuario completa la transferencia en su banco
+5. Se dispara callback `onSuccess`, `onPending` o `onError`
+
+:::info
+Los pagos por PSE pueden quedar en estado `pending` mientras el banco procesa la transferencia. Usa webhooks para recibir la confirmación final del pago.
+:::
 
 ## Manejando Respuestas de Pago
 

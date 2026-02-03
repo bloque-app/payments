@@ -1,3 +1,5 @@
+export type PaymentMethod = 'card' | 'pse';
+
 export interface AppearanceConfig {
   /**
    * Primary color for buttons and accents
@@ -70,6 +72,15 @@ export interface BloqueCheckoutOptions {
    * @default false
    */
   showInstallments?: boolean;
+
+  /**
+   * Payment methods to display in the checkout
+   * @example ['card', 'pse'] - Both card and PSE
+   * @example ['pse'] - Only PSE
+   * @example ['card'] - Only card (default)
+   * @default ['card']
+   */
+  paymentMethods?: PaymentMethod[];
 
   /**
    * Callback fired when the checkout iframe is ready to receive the checkout ID

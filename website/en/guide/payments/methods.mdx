@@ -1,10 +1,10 @@
 # Payment Methods
 
-Bloque Payments currently supports card payments to process transactions securely.
+Bloque Payments supports multiple payment methods to process transactions securely.
 
 ## Available Payment Methods
 
-### Card Payments
+### Card Payments (`card`)
 
 Accept credit and debit card payments from major card networks.
 
@@ -19,6 +19,16 @@ Accept credit and debit card payments from major card networks.
 - 3D Secure support
 - Automatic card validation
 - CVV verification
+
+### PSE (`pse`)
+
+Accept bank transfer payments in Colombia through PSE (Pagos Seguros en Línea).
+
+**Features:**
+- Direct bank transfer
+- Available for all banks in Colombia
+- Real-time or pending confirmation depending on the bank
+- No credit card required
 
 ## How It Works
 
@@ -98,12 +108,60 @@ function CheckoutPage({ checkoutId }: CheckoutPageProps) {
 }
 ```
 
+## Filter Payment Methods
+
+You can control which payment methods are displayed in the checkout using the `paymentMethods` prop:
+
+```tsx
+// Card only (default)
+<BloqueCheckout
+  checkoutId={checkoutId}
+  paymentMethods={['card']}
+  onSuccess={handleSuccess}
+/>
+
+// PSE only
+<BloqueCheckout
+  checkoutId={checkoutId}
+  paymentMethods={['pse']}
+  onSuccess={handleSuccess}
+/>
+
+// Both methods
+<BloqueCheckout
+  checkoutId={checkoutId}
+  paymentMethods={['card', 'pse']}
+  onSuccess={handleSuccess}
+/>
+```
+
+| Value | Description |
+|-------|-------------|
+| `card` | Credit/debit card payment |
+| `pse` | PSE payment (bank transfer Colombia) |
+
+:::tip
+If you don't specify `paymentMethods`, only card payment will be shown by default (`['card']`).
+:::
+
 ## Card Payment Flow
 
 1. User selects card payment in hosted checkout
 2. User enters card details
 3. Real-time authorization is processed
 4. `onSuccess` or `onError` callback is triggered
+
+## PSE Payment Flow
+
+1. User selects PSE in hosted checkout
+2. User selects their bank
+3. User is redirected to their bank's portal
+4. User completes the transfer at their bank
+5. `onSuccess`, `onPending` or `onError` callback is triggered
+
+:::info
+PSE payments may remain in `pending` status while the bank processes the transfer. Use webhooks to receive the final payment confirmation.
+:::
 
 ## Handling Payment Responses
 
