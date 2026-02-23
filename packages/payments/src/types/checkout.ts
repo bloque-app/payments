@@ -5,12 +5,12 @@ export interface CreateCheckoutPayload {
   name: string;
   description?: string;
   image_url?: string;
-  asset: 'dUSD/6';
+  asset: 'dUSD/6' | 'COPM/2';
   payment_type: 'shopping_cart';
   items: {
     name: string;
-    price: string;
-    units: number;
+    amount: string;
+    quantity: number;
     image_url?: string;
   }[];
   redirect_url: string;
@@ -22,16 +22,17 @@ export interface CreateCheckoutResponse {
   payment: {
     urn: string;
     url: string;
-    price: number;
+    amount: number;
     image_url?: string | null;
-    metadata?: Metadata;
+    metadata?: Metadata | null;
     created_at: string;
     updated_at: string;
-    expires_at: string;
+    expires_at: string | null;
     summary: {
       status: CheckoutStatus;
     };
   };
+  url_id: string;
 }
 
 /**
@@ -201,5 +202,5 @@ export interface Checkout {
   /**
    * Checkout expiration timestamp in ISO 8601 format.
    */
-  expires_at: string;
+  expires_at: string | null;
 }

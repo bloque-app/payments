@@ -10,8 +10,8 @@ export class CheckoutResource extends BaseResource {
   async create(params: CheckoutParams): Promise<Checkout> {
     const items = params.items.map((item) => ({
       name: item.name,
-      price: item.amount.toString(),
-      units: item.quantity,
+      amount: item.amount.toString(),
+      quantity: item.quantity,
       image_url: item.image_url,
     }));
 
@@ -38,14 +38,14 @@ export class CheckoutResource extends BaseResource {
       object: 'checkout',
       url: response.payment.url,
       status: response.payment.summary.status,
-      amount_total: response.payment.price,
-      amount_subtotal: response.payment.price,
+      amount_total: response.payment.amount,
+      amount_subtotal: response.payment.amount,
       currency: 'USD',
       items: params.items,
       created_at: response.payment.created_at,
       updated_at: response.payment.updated_at,
       expires_at: response.payment.expires_at,
-      metadata: response.payment.metadata,
+      metadata: response.payment.metadata ?? undefined,
     };
   }
 

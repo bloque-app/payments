@@ -95,17 +95,18 @@ export class HttpClient {
   }
 
   private buildURL(path: string, params?: Record<string, unknown>): string {
-    const url = new URL(path, this.baseURL);
+    const url = `${this.baseURL}${path.startsWith('/') ? path : `/${path}`}`;
+    const urlObj = new URL(url);
 
     if (params) {
       for (const [key, value] of Object.entries(params)) {
         if (value !== undefined && value !== null) {
-          url.searchParams.append(key, String(value));
+          urlObj.searchParams.append(key, String(value));
         }
       }
     }
 
-    return url.toString();
+    return urlObj.toString();
   }
 
   private buildHeaders(
