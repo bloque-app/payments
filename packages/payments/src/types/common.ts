@@ -1,4 +1,4 @@
-export type Currency = 'COP' | 'USD';
+export type ASSETS = 'COPM/2' | 'DUSD/6';
 
 export interface Metadata {
   [key: string]: string | number | boolean;

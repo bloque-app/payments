@@ -1,11 +1,11 @@
-import type { Currency, Metadata } from './common';
+import type { ASSETS, Metadata } from './common';
 import type { Customer } from './customer';
 
 export interface CreateCheckoutPayload {
   name: string;
   description?: string;
   image_url?: string;
-  asset: 'dUSD/6' | 'COPM/2';
+  asset: ASSETS;
   payment_type: 'shopping_cart';
   items: {
     name: string;
@@ -22,6 +22,7 @@ export interface CreateCheckoutResponse {
   payment: {
     urn: string;
     url: string;
+    asset: ASSETS;
     amount: number;
     image_url?: string | null;
     metadata?: Metadata | null;
@@ -89,11 +90,11 @@ export interface CheckoutParams {
   items: CheckoutItem[];
 
   /**
-   * Currency used for the checkout.
+   * Asset used for the checkout.
    *
-   * @default 'USD'
+   * @default 'dUSD/6'
    */
-  currency?: Currency;
+  asset?: ASSETS;
 
   /**
    * URL the customer will be redirected to after a successful payment.
@@ -170,9 +171,9 @@ export interface Checkout {
   amount_subtotal: number;
 
   /**
-   * Currency used for the checkout.
+   * Asset used for the checkout.
    */
-  currency: Currency;
+  asset: ASSETS;
 
   /**
    * Customer associated with the checkout, if any.

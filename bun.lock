@@ -14,7 +14,7 @@
     },
     "packages/payments": {
       "name": "@bloque/payments",
-      "version": "0.0.10",
+      "version": "0.0.11",
       "devDependencies": {
         "@rslib/core": "catalog:",
         "@types/node": "catalog:",
@@ -24,7 +24,7 @@
     },
     "packages/payments-core": {
       "name": "@bloque/payments-core",
-      "version": "0.0.10",
+      "version": "0.0.11",
       "devDependencies": {
         "@rslib/core": "catalog:",
         "@types/node": "catalog:",
@@ -34,7 +34,7 @@
     },
     "packages/payments-react": {
       "name": "@bloque/payments-react",
-      "version": "0.0.10",
+      "version": "0.0.11",
       "dependencies": {
         "@bloque/payments-core": "workspace:*",
       },

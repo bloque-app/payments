@@ -18,8 +18,7 @@ export class CheckoutResource extends BaseResource {
     const payload: CreateCheckoutPayload = {
       name: params.name,
       description: params.description,
-      // TODO: change hardcoded asset when supporting multiple currencies
-      asset: 'dUSD/6',
+      asset: params.asset ?? 'DUSD/6',
       payment_type: 'shopping_cart',
       image_url: params.image_url,
       items: items,
@@ -28,10 +27,7 @@ export class CheckoutResource extends BaseResource {
       metadata: params.metadata,
     };
 
-    const response = await this.http.post<CreateCheckoutResponse>(
-      '/checkout',
-      payload,
-    );
+    const response = await this.http.post<CreateCheckoutResponse>('/', payload);
 
     return {
       id: response.payment.urn,
@@ -40,7 +36,7 @@ export class CheckoutResource extends BaseResource {
       status: response.payment.summary.status,
       amount_total: response.payment.amount,
       amount_subtotal: response.payment.amount,
-      currency: 'USD',
+      asset: response.payment.asset,
       items: params.items,
       created_at: response.payment.created_at,
       updated_at: response.payment.updated_at,
