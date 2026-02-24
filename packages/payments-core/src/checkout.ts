@@ -6,7 +6,7 @@ import type {
   PaymentResult,
 } from './types';
 
-const DEFAULT_CHECKOUT_URL = 'http://payments.bloque.app/checkout';
+const DEFAULT_CHECKOUT_URL = 'https://payments.bloque.app/checkout';
 
 export class BloqueCheckout {
   private static globalConfig: BloqueInitOptions | null = null;
