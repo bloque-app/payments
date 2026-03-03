@@ -145,6 +145,11 @@ export interface Checkout {
   id: string;
 
   /**
+   * URN identifier for the underlying payment entity.
+   */
+  urn: string;
+
+  /**
    * Object type discriminator.
    */
   object: 'checkout';

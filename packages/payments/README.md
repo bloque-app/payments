@@ -106,6 +106,7 @@ Response shape:
 ```ts
 type Checkout = {
   id: string;
+  urn: string;
   object: 'checkout';
   url: string;
   status: 'pending' | 'completed' | 'expired' | 'canceled';

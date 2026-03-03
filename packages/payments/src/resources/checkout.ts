@@ -30,7 +30,8 @@ export class CheckoutResource extends BaseResource {
     const response = await this.http.post<CreateCheckoutResponse>('/', payload);
 
     return {
-      id: response.payment.urn,
+      id: response.url_id,
+      urn: response.payment.urn,
       object: 'checkout',
       url: response.payment.url,
       status: response.payment.summary.status,
