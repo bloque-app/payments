@@ -7,6 +7,18 @@ export type {
   CheckoutStatus,
 } from './types/checkout';
 export type {
+  Bep20Route,
+  BloqueRoute,
+  KusamaRoute,
+  PayoutRoute,
+  PayoutRouteFixed,
+  PayoutRoutePercentage,
+  PolygonRoute,
+  Route,
+  RouteNetwork,
+  TronRoute,
+} from './types/common';
+export type {
   CreatePaymentParams,
   PaymentResponse,
   PaymentSubmitPayload,
