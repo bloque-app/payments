@@ -25,6 +25,7 @@ export class CheckoutResource extends BaseResource {
       redirect_url: params.success_url,
       expires_at: params.expires_at,
       metadata: params.metadata,
+      payout_route: params.payout_route,
     };
 
     const response = await this.http.post<CreateCheckoutResponse>('/', payload);

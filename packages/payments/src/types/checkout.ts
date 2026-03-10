@@ -1,4 +1,4 @@
-import type { ASSETS, Metadata } from './common';
+import type { ASSETS, Metadata, PayoutRoute } from './common';
 import type { Customer } from './customer';
 
 export interface CreateCheckoutPayload {
@@ -16,6 +16,7 @@ export interface CreateCheckoutPayload {
   redirect_url: string;
   expires_at?: string;
   metadata?: Metadata;
+  payout_route?: PayoutRoute[];
 }
 
 export interface CreateCheckoutResponse {
@@ -124,6 +125,12 @@ export interface CheckoutParams {
    * @default ['card', 'pse', 'cash']
    */
   payment_methods?: ('card' | 'pse' | 'cash')[];
+
+  /**
+   * Payout routes for distributing funds after payment.
+   * Each route specifies a destination network and the amount or percentage to send.
+   */
+  payout_route?: PayoutRoute[];
 }
 
 /**
