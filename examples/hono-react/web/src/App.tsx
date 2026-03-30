@@ -13,7 +13,13 @@ type PaymentIntentResponse = {
 };
 
 const API_BASE_URL = 'http://localhost:8787';
-const PUBLIC_API_KEY = 'pk_dsdfsddddddddddddddddddffffffffer3resfsef';
+const PUBLIC_API_KEY =
+  import.meta.env.VITE_PUBLIC_API_KEY ??
+  'pk_dsdfsddddddddddddddddddffffffffer3resfsef';
+const CHECKOUT_URL = import.meta.env.VITE_CHECKOUT_URL;
+const THREE_DS_AUTH_TYPE = import.meta.env.VITE_THREE_DS_AUTH_TYPE;
+const BLOQUE_MODE: 'sandbox' | 'production' =
+  import.meta.env.VITE_BLOQUE_MODE === 'production' ? 'production' : 'sandbox';
 
 const product = {
   name: 'Pack de Donacion',
@@ -238,13 +244,21 @@ const App = () => {
                   <BloqueCheckout
                     checkoutId={checkoutId}
                     publicApiKey={PUBLIC_API_KEY}
-                    mode="production"
+                    mode={BLOQUE_MODE}
+                    checkoutUrl={CHECKOUT_URL}
                     paymentMethods={['card']}
+                    threeDsAuthType={THREE_DS_AUTH_TYPE}
+                    onThreeDSChallenge={() => {
+                      console.log('3DS challenge started');
+                    }}
                     onSuccess={(response) => {
                       console.log('Payment successful!', response);
                       alert(
                         `Pago ${response.status} - id ${response.payment_id}`,
                       );
+                    }}
+                    onPending={(response) => {
+                      console.log('Payment pending:', response.payment_id);
                     }}
                     onError={(checkoutError) => {
                       console.error('Payment failed:', checkoutError);

@@ -8,11 +8,17 @@ import {
   init,
 } from '../../../packages/payments-react/src/index';
 
-// Initialize BloqueCheckout with your public API key and mode
+const PUBLIC_API_KEY =
+  import.meta.env.VITE_PUBLIC_API_KEY ??
+  'pk_test_51NCIz2Fq3Y6V1gX3r1Y2x5ZK0j3h4g5h6i7j8k9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z4a5b6c7d8e9f0g1h2i3j4k5l6';
+const CHECKOUT_ID = import.meta.env.VITE_CHECKOUT_ID ?? 'checkout_123';
+const CHECKOUT_URL = import.meta.env.VITE_CHECKOUT_URL;
+const THREE_DS_AUTH_TYPE = import.meta.env.VITE_THREE_DS_AUTH_TYPE;
+
 init({
-  publicApiKey:
-    'pk_test_51NCIz2Fq3Y6V1gX3r1Y2x5ZK0j3h4g5h6i7j8k9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z4a5b6c7d8e9f0g1h2i3j4k5l6',
+  publicApiKey: PUBLIC_API_KEY,
   mode: 'sandbox',
+  ...(CHECKOUT_URL ? { checkoutUrl: CHECKOUT_URL } : {}),
 });
 
 const product = {
@@ -28,9 +34,7 @@ const product = {
 };
 
 const App = () => {
-  // In a real application, you would get this checkoutId from your backend
-  // after creating a checkout session with the product details
-  const checkoutId = 'checkout_123';
+  const checkoutId = CHECKOUT_ID;
 
   const appearance: AppearanceConfig = {
     primaryColor: '#6366f1',
@@ -182,10 +186,17 @@ const App = () => {
                 <BloqueCheckout
                   checkoutId={checkoutId}
                   appearance={appearance}
+                  threeDsAuthType={THREE_DS_AUTH_TYPE}
+                  onThreeDSChallenge={() => {
+                    console.log('3DS challenge started — overlay is visible');
+                  }}
                   onSuccess={(response) => {
                     console.log('Payment successful!');
                     console.log('Payment ID:', response.payment_id);
                     console.log('Status:', response.status);
+                  }}
+                  onPending={(response) => {
+                    console.log('Payment pending:', response.payment_id);
                   }}
                   onError={(error) => {
                     console.error('Payment failed:', error);
