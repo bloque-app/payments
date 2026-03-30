@@ -106,6 +106,16 @@ export interface BloqueCheckoutOptions {
    * Custom CSS styles to apply to the iframe
    */
   iframeStyles?: Record<string, string>;
+
+  /**
+   * Sandbox-only Wompi 3DS scenario (e.g. challenge_v2). Forwarded to hosted checkout via checkout-init.
+   */
+  three_ds_auth_type?: string;
+
+  /**
+   * Called when the hosted checkout starts a 3DS challenge (overlay is shown in the parent page).
+   */
+  onThreeDSChallenge?: () => void;
 }
 
 export interface PaymentResult {
@@ -122,11 +132,17 @@ export type CheckoutMessageType =
   | 'checkout-ready'
   | 'checkout-init'
   | 'payment-result'
-  | 'payment-error';
+  | 'payment-error'
+  | '3ds-challenge';
+
+export interface ThreeDSChallengeData {
+  iframe: string;
+}
 
 export interface CheckoutMessage {
   type: CheckoutMessageType;
   checkoutId?: string;
   data?: PaymentResult;
   error?: string;
+  threeDsData?: ThreeDSChallengeData;
 }

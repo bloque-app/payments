@@ -173,8 +173,75 @@ type PaymentResponse = {
   currency: string;
   created_at: string;
   updated_at: string;
+  three_ds?: { current_step: string; iframe: string };
 };
 ```
+
+#### `bloque.payments.getStatus(paymentId)`
+
+Poll payment status by URN (e.g. `did:bloque:payments:...`) after a 3DS challenge.
+
+```ts
+const latest = await bloque.payments.getStatus(payment.id);
+```
+
+### 3D Secure (direct API)
+
+When you process card payments server-side with 3DS, pass browser fingerprint fields and optional sandbox scenario:
+
+```ts
+import type { BrowserInfo } from '@bloque/payments';
+
+function browserInfoFromRequest(req: {
+  headers: Record<string, string | string[] | undefined>;
+}): BrowserInfo {
+  const ua = String(req.headers['user-agent'] ?? '');
+  const accept = String(req.headers['accept'] ?? '*/*');
+  const lang = String(req.headers['accept-language'] ?? 'en');
+  return {
+    browser_user_agent: ua,
+    browser_language: lang,
+    browser_color_depth: '24',
+    browser_screen_height: '900',
+    browser_screen_width: '1440',
+    browser_tz: '0',
+  };
+}
+
+const payment = await bloque.payments.create({
+  checkoutId: 'checkout_123',
+  payment: {
+    type: 'card',
+    data: {
+      cardNumber: '4111111111111111',
+      cardholderName: 'John Doe',
+      expiryMonth: '12',
+      expiryYear: '2028',
+      cvv: '123',
+      email: 'john@example.com',
+      is_three_ds: true,
+      browser_info: browserInfoFromRequest(req),
+      three_ds_auth_type: 'challenge_v2', // sandbox only; omit in production
+    },
+  },
+});
+
+if (payment.three_ds?.iframe) {
+  // 1) Decode HTML entities if the gateway returns escaped HTML
+  // 2) If iframe is a URL (https://...), use <iframe src="...">
+  // 3) Otherwise use <iframe srcdoc={decodedHtml}> with sandbox allow-scripts allow-forms allow-popups
+  // 4) Show Mastercard ID Check branding before/around the challenge where required
+  // 5) Poll until terminal state:
+  let status = payment.status;
+  while (status === 'pending' || status === 'processing') {
+    await new Promise((r) => setTimeout(r, 3000));
+    const next = await bloque.payments.getStatus(payment.id);
+    status = next.status;
+  }
+}
+```
+
+Field names for `BrowserInfo` match the Bloque Payments API (`browser_user_agent`, `browser_language`, etc.).
 
 ### Webhooks
 

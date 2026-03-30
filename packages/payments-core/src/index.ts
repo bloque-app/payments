@@ -7,4 +7,5 @@ export type {
   CheckoutMessageType,
   PaymentMethod,
   PaymentResult,
+  ThreeDSChallengeData,
 } from './types';

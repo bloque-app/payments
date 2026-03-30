@@ -1,4 +1,4 @@
-export type ASSETS = 'COPM/2' | 'DUSD/6';
+export type ASSETS = 'COPM/2' | 'DUSD/6' | 'COP/2' | 'USD/6';
 
 export interface Metadata {
   [key: string]: unknown;

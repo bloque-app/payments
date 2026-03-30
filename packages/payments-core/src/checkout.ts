@@ -1,12 +1,24 @@
+import { MC_ID_CHECK_LOGO_DATA_URI } from './assets/mc-id-check-logo-data-uri';
 import type {
   BloqueCheckoutOptions,
   BloqueInitOptions,
   CheckoutMessage,
   PaymentMethod,
   PaymentResult,
+  ThreeDSChallengeData,
 } from './types';
 
 const DEFAULT_CHECKOUT_URL = 'https://payments.bloque.app/checkout';
+
+function isUrl(s: string): boolean {
+  return /^https?:\/\//i.test(s.trim());
+}
+
+function decodeHtmlEntities(encoded: string): string {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = encoded;
+  return textarea.value;
+}
 
 export class BloqueCheckout {
   private static globalConfig: BloqueInitOptions | null = null;
@@ -20,6 +32,12 @@ export class BloqueCheckout {
   };
   private messageListener: ((event: MessageEvent) => void) | null = null;
   private isReady = false;
+
+  /** Full-screen 3DS overlay mounted on document.body (avoids nested iframes). */
+  private threeDsOverlay: HTMLDivElement | null = null;
+  private threeDsTimers: ReturnType<typeof setTimeout>[] = [];
+  private threeDsContentEl: HTMLDivElement | null = null;
+  private threeDsStatusEl: HTMLDivElement | null = null;
 
   /**
    * Initialize global configuration for all BloqueCheckout instances
@@ -74,6 +92,8 @@ export class BloqueCheckout {
       onError: options.onError,
       onPending: options.onPending,
       iframeStyles: options.iframeStyles,
+      three_ds_auth_type: options.three_ds_auth_type,
+      onThreeDSChallenge: options.onThreeDSChallenge,
     };
   }
 
@@ -128,7 +148,7 @@ export class BloqueCheckout {
 
     for (const [key, value] of Object.entries(styles)) {
       if (value !== undefined && value !== null) {
-        (this.iframe.style as any)[key] = value;
+        (this.iframe.style as unknown as Record<string, string>)[key] = value;
       }
     }
 
@@ -154,11 +174,15 @@ export class BloqueCheckout {
 
   private setupMessageListener(): void {
     this.messageListener = (event: MessageEvent<CheckoutMessage>) => {
-      const { type, data, error } = event.data || {};
+      const { type, data, error, threeDsData } = event.data || {};
 
       switch (type) {
         case 'checkout-ready':
           this.handleCheckoutReady();
+          break;
+
+        case '3ds-challenge':
+          this.handleThreeDSChallenge(threeDsData);
           break;
 
         case 'payment-result':
@@ -192,6 +216,9 @@ export class BloqueCheckout {
           checkoutId: this.options.checkoutId,
           publicApiKey: this.options.publicApiKey,
           mode: this.options.mode,
+          ...(this.options.three_ds_auth_type !== undefined
+            ? { three_ds_auth_type: this.options.three_ds_auth_type }
+            : {}),
         },
         '*',
       );
@@ -200,7 +227,162 @@ export class BloqueCheckout {
     this.options.onReady?.();
   }
 
+  private clearThreeDsTimers(): void {
+    for (const t of this.threeDsTimers) {
+      clearTimeout(t);
+    }
+    this.threeDsTimers = [];
+  }
+
+  private removeThreeDsOverlay(): void {
+    this.clearThreeDsTimers();
+    this.threeDsContentEl = null;
+    this.threeDsStatusEl = null;
+    if (this.threeDsOverlay?.parentNode) {
+      this.threeDsOverlay.parentNode.removeChild(this.threeDsOverlay);
+    }
+    this.threeDsOverlay = null;
+  }
+
+  private setThreeDsStatus(text: string): void {
+    if (this.threeDsStatusEl) {
+      this.threeDsStatusEl.textContent = text;
+    }
+  }
+
+  private showMcLogoInContent(): void {
+    if (!this.threeDsContentEl) return;
+    this.threeDsContentEl.replaceChildren();
+    const wrap = document.createElement('div');
+    wrap.style.cssText =
+      'display:flex;align-items:center;justify-content:center;width:100%;min-height:400px;background:#fff;';
+    const img = document.createElement('img');
+    img.src = MC_ID_CHECK_LOGO_DATA_URI;
+    img.alt = 'Mastercard Identity Check';
+    img.style.cssText = 'width:256px;max-width:80%;height:auto;';
+    wrap.appendChild(img);
+    this.threeDsContentEl.appendChild(wrap);
+  }
+
+  private handleThreeDSChallenge(data: ThreeDSChallengeData | undefined): void {
+    if (!data?.iframe || typeof document === 'undefined') {
+      return;
+    }
+
+    this.options.onThreeDSChallenge?.();
+
+    this.removeThreeDsOverlay();
+
+    const root = document.createElement('div');
+    root.className = 'bloque-3ds-overlay';
+    root.style.cssText =
+      'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.5);display:flex;flex-direction:column;font-family:system-ui,sans-serif;';
+
+    const panel = document.createElement('div');
+    panel.style.cssText =
+      'margin:auto;width:min(480px,96vw);max-height:90vh;display:flex;flex-direction:column;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);';
+
+    const header = document.createElement('div');
+    header.style.cssText =
+      'display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e5e7eb;';
+
+    const title = document.createElement('span');
+    title.textContent = 'Verificación segura';
+    title.style.cssText = 'font-weight:600;font-size:15px;color:#111827;';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Cerrar');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText =
+      'border:none;background:transparent;font-size:20px;line-height:1;cursor:pointer;color:#6b7280;padding:4px 8px;';
+    closeBtn.addEventListener('click', () => {
+      this.removeThreeDsOverlay();
+      this.options.onError?.('3D Secure verification was cancelled');
+    });
+
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+
+    const statusEl = document.createElement('div');
+    statusEl.style.cssText =
+      'padding:8px 16px;font-size:13px;color:#4b5563;text-align:center;';
+    statusEl.textContent = 'Iniciando verificación segura...';
+
+    const contentEl = document.createElement('div');
+    contentEl.style.cssText =
+      'flex:1;min-height:400px;border-top:1px solid #e5e7eb;';
+
+    panel.appendChild(header);
+    panel.appendChild(statusEl);
+    panel.appendChild(contentEl);
+    root.appendChild(panel);
+    document.body.appendChild(root);
+
+    this.threeDsOverlay = root;
+    this.threeDsStatusEl = statusEl;
+    this.threeDsContentEl = contentEl;
+
+    this.showMcLogoInContent();
+
+    const decoded = decodeHtmlEntities(data.iframe);
+
+    const splashTimer = setTimeout(() => {
+      this.setThreeDsStatus(
+        'Complete la verificación de su banco para continuar',
+      );
+      if (!this.threeDsContentEl) return;
+      this.threeDsContentEl.replaceChildren();
+
+      const frameWrap = document.createElement('div');
+      frameWrap.style.cssText = 'width:100%;min-height:400px;background:#fff;';
+
+      const iframeEl = document.createElement('iframe');
+      iframeEl.title = '3D Secure verification';
+      iframeEl.style.cssText =
+        'width:100%;height:400px;border:0;display:block;';
+
+      if (isUrl(decoded)) {
+        iframeEl.src = decoded.trim();
+        iframeEl.setAttribute(
+          'sandbox',
+          'allow-scripts allow-forms allow-popups allow-same-origin',
+        );
+      } else {
+        iframeEl.srcdoc = decoded;
+        iframeEl.setAttribute(
+          'sandbox',
+          'allow-scripts allow-forms allow-popups',
+        );
+      }
+
+      frameWrap.appendChild(iframeEl);
+      this.threeDsContentEl.appendChild(frameWrap);
+    }, 3000);
+    this.threeDsTimers.push(splashTimer);
+  }
+
   private handlePaymentResult(data: PaymentResult): void {
+    if (this.threeDsOverlay) {
+      this.finishThreeDsThenDispatch(data);
+      return;
+    }
+    this.dispatchPaymentResult(data);
+  }
+
+  private finishThreeDsThenDispatch(data: PaymentResult): void {
+    this.clearThreeDsTimers();
+    this.setThreeDsStatus('Autenticación completada, redirigiendo...');
+    this.showMcLogoInContent();
+
+    const t = setTimeout(() => {
+      this.removeThreeDsOverlay();
+      this.dispatchPaymentResult(data);
+    }, 2000);
+    this.threeDsTimers.push(t);
+  }
+
+  private dispatchPaymentResult(data: PaymentResult): void {
     if (data.status === 'approved') {
       this.options.onSuccess?.(data);
     } else if (data.status === 'pending') {
@@ -211,6 +393,9 @@ export class BloqueCheckout {
   }
 
   private handlePaymentError(error: string): void {
+    if (this.threeDsOverlay) {
+      this.removeThreeDsOverlay();
+    }
     this.options.onError?.(error);
   }
 
@@ -232,6 +417,8 @@ export class BloqueCheckout {
   }
 
   destroy(): void {
+    this.removeThreeDsOverlay();
+
     if (this.iframe) {
       this.iframe.remove();
       this.iframe = null;

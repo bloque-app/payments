@@ -1,5 +1,6 @@
 import type {
   CardPaymentFormData,
+  CardPaymentPayload,
   CreatePaymentParams,
   PaymentResponse,
   PaymentSubmitPayload,
@@ -42,17 +43,28 @@ export class PaymentResource extends BaseResource {
     return paymentResponse;
   }
 
+  /**
+   * Fetch current payment status by payment URN (e.g. `did:bloque:payments:uuid`).
+   * Use while polling after a 3DS challenge.
+   */
+  async getStatus(paymentId: string): Promise<PaymentResponse> {
+    return this.http.get<PaymentResponse>(`/${paymentId}`);
+  }
+
   private buildPaymentPayload(
     payment: PaymentSubmitPayload,
   ): Record<string, unknown> {
     switch (payment.type) {
       case 'card':
-        return this.buildCardPayload(payment.data);
+        return this.buildCardPayload(payment.data) as unknown as Record<
+          string,
+          unknown
+        >;
     }
   }
 
-  private buildCardPayload(data: CardPaymentFormData): Record<string, string> {
-    return {
+  private buildCardPayload(data: CardPaymentFormData): CardPaymentPayload {
+    const payload: CardPaymentPayload = {
       customer_email: data.email || '',
       number: data.cardNumber,
       cvc: data.cvv,
@@ -60,5 +72,17 @@ export class PaymentResource extends BaseResource {
       exp_year: data.expiryYear,
       card_holder: data.cardholderName,
     };
+
+    if (data.is_three_ds !== undefined) {
+      payload.is_three_ds = data.is_three_ds;
+    }
+    if (data.browser_info !== undefined) {
+      payload.browser_info = data.browser_info;
+    }
+    if (data.three_ds_auth_type !== undefined) {
+      payload.three_ds_auth_type = data.three_ds_auth_type;
+    }
+
+    return payload;
   }
 }
