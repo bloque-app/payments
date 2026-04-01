@@ -12,6 +12,11 @@ export interface BloqueCheckoutProps
   checkoutId: string;
 
   /**
+   * Checkout-scoped JWT returned from the create checkout API
+   */
+  clientSecret?: string;
+
+  /**
    * Sandbox-only Wompi 3DS scenario (e.g. challenge_v2).
    */
   threeDsAuthType?: string;
@@ -53,6 +58,8 @@ export interface BloqueCheckoutProps
  */
 export function BloqueCheckout({
   checkoutId,
+  clientSecret,
+  publishableKey,
   publicApiKey,
   mode,
   checkoutUrl,
@@ -77,6 +84,8 @@ export function BloqueCheckout({
 
     const checkout = new CoreBloqueCheckout({
       checkoutId,
+      clientSecret,
+      publishableKey,
       publicApiKey,
       mode,
       checkoutUrl,
@@ -102,6 +111,8 @@ export function BloqueCheckout({
     };
   }, [
     checkoutId,
+    clientSecret,
+    publishableKey,
     publicApiKey,
     mode,
     checkoutUrl,

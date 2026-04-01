@@ -13,9 +13,11 @@ type PaymentIntentResponse = {
 };
 
 const API_BASE_URL = 'http://localhost:8787';
-const PUBLIC_API_KEY =
+const PUBLISHABLE_KEY =
+  import.meta.env.VITE_PUBLISHABLE_KEY ??
   import.meta.env.VITE_PUBLIC_API_KEY ??
-  'pk_dsdfsddddddddddddddddddffffffffer3resfsef';
+  'pk_test_your_key_here';
+const CLIENT_SECRET = import.meta.env.VITE_CLIENT_SECRET;
 const CHECKOUT_URL = import.meta.env.VITE_CHECKOUT_URL;
 const THREE_DS_AUTH_TYPE = import.meta.env.VITE_THREE_DS_AUTH_TYPE;
 const BLOQUE_MODE: 'sandbox' | 'production' =
@@ -243,7 +245,8 @@ const App = () => {
                 <div className="checkout-form">
                   <BloqueCheckout
                     checkoutId={checkoutId}
-                    publicApiKey={PUBLIC_API_KEY}
+                    publishableKey={PUBLISHABLE_KEY}
+                    clientSecret={CLIENT_SECRET}
                     mode={BLOQUE_MODE}
                     checkoutUrl={CHECKOUT_URL}
                     paymentMethods={['card']}

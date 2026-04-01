@@ -64,8 +64,11 @@ export class BloqueCheckout {
       throw new Error('[BloqueCheckout] checkoutId is required');
     }
 
-    const publicApiKey =
-      options.publicApiKey || BloqueCheckout.globalConfig?.publicApiKey;
+    const publishableKey =
+      options.publishableKey ||
+      options.publicApiKey ||
+      BloqueCheckout.globalConfig?.publishableKey ||
+      BloqueCheckout.globalConfig?.publicApiKey;
     const mode =
       options.mode || BloqueCheckout.globalConfig?.mode || 'production';
     const checkoutUrl =
@@ -73,15 +76,17 @@ export class BloqueCheckout {
       BloqueCheckout.globalConfig?.checkoutUrl ||
       DEFAULT_CHECKOUT_URL;
 
-    if (!publicApiKey) {
+    if (!publishableKey) {
       throw new Error(
-        '[BloqueCheckout] publicApiKey is required. Either pass it as an option or call BloqueCheckout.init() first.',
+        '[BloqueCheckout] publishableKey (or publicApiKey) is required. Either pass it as an option or call BloqueCheckout.init() first.',
       );
     }
 
     this.options = {
       checkoutId: options.checkoutId,
-      publicApiKey,
+      clientSecret: options.clientSecret,
+      publishableKey,
+      publicApiKey: publishableKey,
       mode,
       checkoutUrl,
       appearance: options.appearance,
@@ -214,6 +219,8 @@ export class BloqueCheckout {
         {
           type: 'checkout-init',
           checkoutId: this.options.checkoutId,
+          clientSecret: this.options.clientSecret,
+          publishableKey: this.options.publishableKey,
           publicApiKey: this.options.publicApiKey,
           mode: this.options.mode,
           ...(this.options.three_ds_auth_type !== undefined

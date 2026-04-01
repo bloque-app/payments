@@ -2,7 +2,7 @@
  * Direct card payment with 3D Secure — server-side example.
  *
  * Usage:
- *   BLOQUE_RUN_CARD_EXAMPLE=1 BLOQUE_ACCESS_TOKEN=<token> BLOQUE_CHECKOUT_ID=<id> npx tsx examples/direct-card-payment-3ds.example.ts
+ *   BLOQUE_RUN_CARD_EXAMPLE=1 BLOQUE_SECRET_KEY=sk_test_... BLOQUE_CHECKOUT_ID=<id> npx tsx examples/direct-card-payment-3ds.example.ts
  *
  * IMPORTANT: browser_info values below are mocked. In a real integration the
  * browser_info MUST be collected from the user's browser (window.screen,
@@ -17,12 +17,12 @@ if (!process.env.BLOQUE_RUN_CARD_EXAMPLE) {
   process.exit(0);
 }
 
-const accessToken = process.env.BLOQUE_ACCESS_TOKEN;
+const secretKey = process.env.BLOQUE_SECRET_KEY;
 const checkoutId = process.env.BLOQUE_CHECKOUT_ID;
 
-if (!accessToken || !checkoutId) {
+if (!secretKey || !checkoutId) {
   console.error(
-    'BLOQUE_ACCESS_TOKEN and BLOQUE_CHECKOUT_ID are required.',
+    'BLOQUE_SECRET_KEY and BLOQUE_CHECKOUT_ID are required.',
   );
   process.exit(1);
 }
@@ -30,7 +30,7 @@ if (!accessToken || !checkoutId) {
 async function main() {
   const bloque = new Bloque({
     mode: 'sandbox',
-    accessToken,
+    secretKey,
   });
 
   console.log('Creating 3DS card payment…');

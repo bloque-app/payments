@@ -35,6 +35,7 @@ export interface CreateCheckoutResponse {
     };
   };
   url_id: string;
+  client_secret?: string;
 }
 
 /**
@@ -216,4 +217,10 @@ export interface Checkout {
    * Checkout expiration timestamp in ISO 8601 format.
    */
   expires_at: string | null;
+
+  /**
+   * Checkout-scoped JWT for browser-side auth in the hosted checkout.
+   * Present when using secretKey-based auth (v2 API keys).
+   */
+  client_secret?: string;
 }

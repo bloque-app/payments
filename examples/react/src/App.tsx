@@ -8,15 +8,17 @@ import {
   init,
 } from '../../../packages/payments-react/src/index';
 
-const PUBLIC_API_KEY =
+const PUBLISHABLE_KEY =
+  import.meta.env.VITE_PUBLISHABLE_KEY ??
   import.meta.env.VITE_PUBLIC_API_KEY ??
-  'pk_test_51NCIz2Fq3Y6V1gX3r1Y2x5ZK0j3h4g5h6i7j8k9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z4a5b6c7d8e9f0g1h2i3j4k5l6';
+  'pk_test_your_key_here';
+const CLIENT_SECRET = import.meta.env.VITE_CLIENT_SECRET;
 const CHECKOUT_ID = import.meta.env.VITE_CHECKOUT_ID ?? 'checkout_123';
 const CHECKOUT_URL = import.meta.env.VITE_CHECKOUT_URL;
 const THREE_DS_AUTH_TYPE = import.meta.env.VITE_THREE_DS_AUTH_TYPE;
 
 init({
-  publicApiKey: PUBLIC_API_KEY,
+  publicApiKey: PUBLISHABLE_KEY,
   mode: 'sandbox',
   ...(CHECKOUT_URL ? { checkoutUrl: CHECKOUT_URL } : {}),
 });
@@ -185,6 +187,8 @@ const App = () => {
               <div className="checkout-form">
                 <BloqueCheckout
                   checkoutId={checkoutId}
+                  publicApiKey={PUBLISHABLE_KEY}
+                  clientSecret={CLIENT_SECRET}
                   appearance={appearance}
                   threeDsAuthType={THREE_DS_AUTH_TYPE}
                   onThreeDSChallenge={() => {

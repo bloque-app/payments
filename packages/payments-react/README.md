@@ -8,15 +8,26 @@ React components for integrating Bloque hosted checkout into your React applicat
 pnpm install @bloque/payments-react
 ```
 
+## Authentication
+
+| Prop | Required | Description |
+|------|----------|-------------|
+| `publishableKey` | Yes | `pk_test_*` / `pk_live_*` — identifies the merchant (browser-safe) |
+| `clientSecret` | Recommended | Scoped JWT from `bloque.checkout.create()` — authorizes payment execution |
+
+> `publicApiKey` is still accepted for backward compatibility but is deprecated.
+
 ## Quick Start
 
 ```tsx
 import { BloqueCheckout } from '@bloque/payments-react';
 
-function CheckoutPage() {
+function CheckoutPage({ checkoutId, clientSecret }) {
   return (
     <BloqueCheckout
-      checkoutId="checkout_123abc"
+      checkoutId={checkoutId}
+      publishableKey="pk_test_..."
+      clientSecret={clientSecret}
       onSuccess={(data) => {
         console.log('Payment successful!', data);
       }}
@@ -38,6 +49,8 @@ The hosted checkout can return a 3DS challenge. `@bloque/payments-core` / React 
 ```tsx
 <BloqueCheckout
   checkoutId="checkout_123abc"
+  publishableKey="pk_test_..."
+  clientSecret={clientSecret}
   threeDsAuthType="challenge_v2"
   onThreeDSChallenge={() => console.log('3DS started')}
   onSuccess={(data) => console.log('ok', data)}

@@ -22,9 +22,12 @@ export interface AppearanceConfig {
 
 export interface BloqueInitOptions {
   /**
-   * Your Bloque public API key
+   * Your Bloque publishable API key (pk_live_... or pk_test_...)
    */
-  publicApiKey: string;
+  publishableKey?: string;
+
+  /** @deprecated Use publishableKey instead */
+  publicApiKey?: string;
 
   /**
    * Operation mode
@@ -46,8 +49,16 @@ export interface BloqueCheckoutOptions {
   checkoutId: string;
 
   /**
-   * Your Bloque public API key (optional if you called BloqueCheckout.init())
+   * Checkout-scoped JWT returned from the create checkout API
    */
+  clientSecret?: string;
+
+  /**
+   * Your Bloque publishable key (pk_live_... or pk_test_...)
+   */
+  publishableKey?: string;
+
+  /** @deprecated Use publishableKey instead */
   publicApiKey?: string;
 
   /**

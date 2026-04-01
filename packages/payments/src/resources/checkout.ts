@@ -44,6 +44,7 @@ export class CheckoutResource extends BaseResource {
       updated_at: response.payment.updated_at,
       expires_at: response.payment.expires_at,
       metadata: response.payment.metadata ?? undefined,
+      client_secret: response.client_secret,
     };
   }
 

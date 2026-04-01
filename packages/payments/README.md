@@ -8,15 +8,36 @@ Official TypeScript/JavaScript SDK for integrating Bloque payments.
 bun add @bloque/payments
 ```
 
-## Initialize
+## Authentication
+
+The SDK supports a three-credential model:
+
+| Credential | Prefix | Where | Purpose |
+|------------|--------|-------|---------|
+| **Secret key** | `sk_test_` / `sk_live_` | Server only | Exchanged for a short-lived JWT via `/origins/api-keys/exchange` |
+| **Publishable key** | `pk_test_` / `pk_live_` | Browser | Identifies the merchant; read-only (view cart) |
+| **Client secret** | JWT | Browser | Scoped JWT for a single checkout session (`checkout.pay`) |
+
+### Initialize (recommended)
 
 ```ts
 import { Bloque } from '@bloque/payments';
 
 const bloque = new Bloque({
-  mode: 'sandbox', // 'sandbox' | 'production'
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  mode: 'sandbox',
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
   webhookSecret: process.env.BLOQUE_WEBHOOK_SECRET, // optional
+});
+```
+
+The SDK automatically exchanges the secret key for a JWT and caches it (with refresh 1 min before expiry).
+
+### Initialize (legacy)
+
+```ts
+const bloque = new Bloque({
+  mode: 'sandbox',
+  accessToken: process.env.BLOQUE_ACCESS_TOKEN!, // deprecated — use secretKey
 });
 ```
 
@@ -27,7 +48,7 @@ import { Bloque } from '@bloque/payments';
 
 const bloque = new Bloque({
   mode: 'sandbox',
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
 });
 
 const checkout = await bloque.checkout.create({
@@ -65,6 +86,15 @@ console.log('Checkout URL:', checkout.url);
 
 ```ts
 type BloqueConfig = {
+  mode: 'sandbox' | 'production';
+  secretKey: string;        // sk_test_... or sk_live_...
+  timeout?: number;         // request timeout in ms (default 10_000)
+  maxRetries?: number;      // retry count (default 2)
+  webhookSecret?: string;
+};
+
+/** @deprecated Use BloqueConfig with secretKey instead */
+type BloqueConfigLegacy = {
   mode: 'sandbox' | 'production';
   accessToken: string;
   timeout?: number;
@@ -109,6 +139,7 @@ type Checkout = {
   urn: string;
   object: 'checkout';
   url: string;
+  client_secret: string;   // scoped JWT for browser-side checkout
   status: 'pending' | 'completed' | 'expired' | 'canceled';
   amount_total: number;
   amount_subtotal: number;
@@ -126,6 +157,8 @@ type Checkout = {
   expires_at: string | null;
 };
 ```
+
+Pass the `client_secret` to `@bloque/payments-core` or `@bloque/payments-react` on the browser to authorize payment execution.
 
 #### `bloque.checkout.retrieve(checkoutId)`
 
