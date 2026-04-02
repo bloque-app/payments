@@ -36,20 +36,20 @@ The `BloqueCheckout` component renders an iframe with the Bloque hosted checkout
 
 ## SDK Initialization
 
-Before using the `BloqueCheckout` component, initialize the SDK with your Public API Key:
+Before using the `BloqueCheckout` component, initialize the SDK with your publishable key:
 
 ```tsx
 import { init } from '@bloque/payments-react';
 
 // Initialize once at the start of your application (e.g., in main.tsx or App.tsx)
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'sandbox', // or 'production'
 });
 ```
 
-:::tip Public API Key
-Use your **Public API Key** to initialize the SDK in the frontend. This key is safe to expose in client-side code. Your **Secret API Key** should only be used on the backend.
+:::tip Publishable Key
+Use your **publishable key** (`pk_live_...` / `pk_test_...`) to initialize the SDK in the frontend. This key is safe to expose in client-side code. Your **secret key** (`sk_live_...`) should only be used on the backend.
 :::
 
 ## Basic Usage
@@ -59,19 +59,20 @@ import { init, BloqueCheckout } from '@bloque/payments-react';
 
 // Initialize once at the start of your application
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'production',
 });
 
 interface CheckoutPageProps {
-  // checkoutId is generated on the backend using @bloque/payments
   checkoutId: string;
+  clientSecret: string;
 }
 
-function CheckoutPage({ checkoutId }: CheckoutPageProps) {
+function CheckoutPage({ checkoutId, clientSecret }: CheckoutPageProps) {
   return (
     <BloqueCheckout
       checkoutId={checkoutId}
+      clientSecret={clientSecret}
       onSuccess={(data) => {
         console.log('Payment successful!', data.payment_id);
         window.location.href = '/success';
@@ -98,7 +99,7 @@ const app = express();
 app.use(express.json());
 
 const bloque = new Bloque({
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
   mode: 'production',
 });
 
@@ -110,7 +111,10 @@ app.post('/api/create-checkout', async (req, res) => {
       success_url: 'https://yourapp.com/success',
     });
 
-    res.json({ id: checkout.id });
+    res.json({
+      id: checkout.id,
+      clientSecret: checkout.client_secret,
+    });
   } catch (error) {
     console.error('Error creating checkout:', error);
     res.status(500).json({ error: error.message });
@@ -127,11 +131,14 @@ app.listen(3000);
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | `checkoutId` | `string` | Yes | Checkout session ID from your backend |
+| `clientSecret` | `string` | No | Checkout-scoped JWT from the create checkout response |
+| `publishableKey` | `string` | No | Publishable key (optional if you called `init()`) |
 | `onSuccess` | `(data: PaymentResult) => void` | No | Called when payment is successful |
 | `onError` | `(error: string) => void` | No | Called when payment fails |
 | `onPending` | `(data: PaymentResult) => void` | No | Called when payment is pending |
 | `onReady` | `() => void` | No | Called when checkout iframe is ready |
-| `publicApiKey` | `string` | No | Public API key (optional if you called `init()`) |
+| `onThreeDSChallenge` | `() => void` | No | Called when a 3D Secure challenge starts |
+| `threeDsAuthType` | `string` | No | 3DS auth type for sandbox testing (e.g. `'challenge_v2'`) |
 | `mode` | `'production' \| 'sandbox'` | No | Environment mode (optional if you called `init()`) |
 | `checkoutUrl` | `string` | No | Custom checkout URL |
 | `appearance` | `AppearanceConfig` | No | UI customization |
@@ -268,12 +275,15 @@ import { init, BloqueCheckout } from '@bloque/payments-react';
 import { useState, useEffect } from 'react';
 
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'production',
 });
 
 export default function CheckoutPage() {
-  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [checkoutData, setCheckoutData] = useState<{
+    id: string;
+    clientSecret: string;
+  } | null>(null);
 
   useEffect(() => {
     fetch('/api/create-checkout', {
@@ -281,14 +291,15 @@ export default function CheckoutPage() {
       body: JSON.stringify({ amount: 5000 }),
     })
       .then(res => res.json())
-      .then(data => setCheckoutId(data.id));
+      .then(data => setCheckoutData(data));
   }, []);
 
-  if (!checkoutId) return <div>Loading...</div>;
+  if (!checkoutData) return <div>Loading...</div>;
 
   return (
     <BloqueCheckout
-      checkoutId={checkoutId}
+      checkoutId={checkoutData.id}
+      clientSecret={checkoutData.clientSecret}
       onSuccess={(data) => {
         console.log('Success!', data);
       }}
@@ -304,12 +315,15 @@ import { init, BloqueCheckout } from '@bloque/payments-react';
 import { useState, useEffect } from 'react';
 
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'production',
 });
 
 export default function CheckoutPage() {
-  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [checkoutData, setCheckoutData] = useState<{
+    id: string;
+    clientSecret: string;
+  } | null>(null);
 
   useEffect(() => {
     fetch('/api/create-checkout', {
@@ -317,14 +331,15 @@ export default function CheckoutPage() {
       body: JSON.stringify({ amount: 5000 }),
     })
       .then(res => res.json())
-      .then(data => setCheckoutId(data.id));
+      .then(data => setCheckoutData(data));
   }, []);
 
-  if (!checkoutId) return <div>Loading...</div>;
+  if (!checkoutData) return <div>Loading...</div>;
 
   return (
     <BloqueCheckout
-      checkoutId={checkoutId}
+      checkoutId={checkoutData.id}
+      clientSecret={checkoutData.clientSecret}
       onSuccess={(data) => {
         console.log('Success!', data);
       }}
@@ -357,5 +372,6 @@ const handleSuccess = (result: PaymentResult) => {
 ## Next Steps
 
 - [Customization](/pay/guide/react/customization) - Customize the UI
+- [3D Secure](/pay/guide/advanced/three-d-secure) - Add 3D Secure authentication
 - [Checkout API](/pay/guide/checkout/overview) - Learn more about the Checkout API
 - [Webhooks](/pay/guide/webhooks/setup) - Handle payment notifications

@@ -132,7 +132,10 @@ export class HttpClient {
       };
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error instanceof KeyRevokedError || error instanceof AuthenticationError) {
+      if (
+        error instanceof KeyRevokedError ||
+        error instanceof AuthenticationError
+      ) {
         throw error;
       }
       throw new BloqueError(

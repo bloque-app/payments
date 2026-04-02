@@ -1,0 +1,228 @@
+# 3D Secure
+
+3D Secure (3DS) agrega una capa adicional de autenticación a los pagos con tarjeta, reduciendo el fraude y transfiriendo la responsabilidad al emisor de la tarjeta.
+
+## Cómo Funciona
+
+Cuando se requiere 3D Secure para un pago, el banco del tarjetahabiente presenta un challenge de verificación (ej: un OTP, verificación biométrica, o aprobación en su app bancaria). Bloque maneja esto automáticamente a través de un overlay a pantalla completa en el checkout alojado.
+
+```
+1. Usuario ingresa datos de tarjeta en el checkout alojado
+   ↓
+2. Se envía el pago
+   ↓
+3. Si se requiere 3DS, aparece un overlay de challenge
+   ↓
+4. Usuario completa la verificación bancaria
+   ↓
+5. Se finaliza el pago
+   ↓
+6. Se dispara callback onSuccess/onError
+```
+
+## Checkout Alojado (Automático)
+
+Si estás usando el checkout alojado vía `BloqueCheckout`, 3D Secure se maneja automáticamente. El iframe del checkout detecta cuando se necesita un challenge 3DS y muestra un overlay a pantalla completa con el formulario de verificación del banco.
+
+### Ejemplo React
+
+```tsx
+import { init, BloqueCheckout } from '@bloque/payments-react';
+
+init({
+  publishableKey: 'pk_live_...',
+  mode: 'production',
+});
+
+function CheckoutPage({ checkoutId, clientSecret }) {
+  return (
+    <BloqueCheckout
+      checkoutId={checkoutId}
+      clientSecret={clientSecret}
+      onThreeDSChallenge={() => {
+        console.log('Challenge 3DS iniciado');
+      }}
+      onSuccess={(data) => {
+        console.log('¡Pago aprobado!', data.payment_id);
+      }}
+      onError={(error) => {
+        console.error('Pago fallido:', error);
+      }}
+    />
+  );
+}
+```
+
+### Props
+
+| Prop | Tipo | Descripción |
+|------|------|-------------|
+| `onThreeDSChallenge` | `() => void` | Llamado cuando el checkout alojado inicia un overlay de challenge 3DS |
+| `threeDsAuthType` | `string` | Solo sandbox: forzar un escenario 3DS específico (ej: `'challenge_v2'`) |
+
+## Pagos Directos con Tarjeta (Lado del Servidor)
+
+Para pagos con tarjeta del lado del servidor usando `@bloque/payments`, puedes habilitar 3D Secure estableciendo `is_three_ds: true` y proporcionando `browser_info` recopilado del navegador del usuario.
+
+### Paso 1: Recopilar Información del Navegador
+
+En el cliente, recopila los campos de huella digital del navegador requeridos para 3DS:
+
+```typescript
+const browserInfo = {
+  browser_color_depth: String(screen.colorDepth),
+  browser_screen_height: String(screen.height),
+  browser_screen_width: String(screen.width),
+  browser_language: navigator.language,
+  browser_user_agent: navigator.userAgent,
+  browser_tz: String(new Date().getTimezoneOffset()),
+};
+```
+
+### Paso 2: Crear Pago con 3DS
+
+Envía la información del navegador a tu backend y crea el pago:
+
+```typescript
+import { Bloque } from '@bloque/payments';
+
+const bloque = new Bloque({
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
+  mode: 'production',
+});
+
+const payment = await bloque.payments.create(checkoutId, {
+  type: 'card',
+  number: cardNumber,
+  exp_month: expMonth,
+  exp_year: expYear,
+  cvc: cvc,
+  card_holder: cardHolder,
+  installments: 1,
+  is_three_ds: true,
+  browser_info: browserInfo,
+});
+```
+
+### Paso 3: Manejar Challenge 3DS
+
+Si el pago requiere 3D Secure, la respuesta incluye un objeto `three_ds`:
+
+```typescript
+if (payment.three_ds) {
+  console.log('Paso 3DS:', payment.three_ds.current_step);
+
+  // payment.three_ds.iframe contiene el HTML o URL para el challenge
+  // Renderízalo en un iframe o redirige al usuario
+}
+```
+
+### Paso 4: Consultar Resultado
+
+Después de que el usuario complete el challenge 3DS, consulta el estado final del pago:
+
+```typescript
+const result = await bloque.payments.getStatus(payment.payment_id);
+
+if (result.status === 'approved') {
+  console.log('¡Pago aprobado!');
+} else if (result.status === 'rejected') {
+  console.log('Pago rechazado:', result.message);
+}
+```
+
+## Tipos
+
+### `BrowserInfo`
+
+```typescript
+interface BrowserInfo {
+  browser_color_depth: string;
+  browser_screen_height: string;
+  browser_screen_width: string;
+  browser_language: string;
+  browser_user_agent: string;
+  browser_tz: string;
+}
+```
+
+### `ThreeDSData`
+
+```typescript
+interface ThreeDSData {
+  current_step: string;
+  iframe: string;   // Contenido HTML o URL para el challenge 3DS
+}
+```
+
+### `PaymentResponse`
+
+```typescript
+interface PaymentResponse {
+  payment_id: string;
+  status: 'approved' | 'pending' | 'rejected';
+  message: string;
+  amount: number;
+  currency: string;
+  reference: string;
+  three_ds?: ThreeDSData;
+}
+```
+
+## Probar 3D Secure
+
+En modo sandbox, usa el parámetro `three_ds_auth_type` para probar diferentes escenarios de 3DS:
+
+### Checkout Alojado
+
+```tsx
+<BloqueCheckout
+  checkoutId={checkoutId}
+  clientSecret={clientSecret}
+  threeDsAuthType="challenge_v2"
+  onSuccess={handleSuccess}
+/>
+```
+
+### Pago Directo
+
+```typescript
+const payment = await bloque.payments.create(checkoutId, {
+  type: 'card',
+  number: '4111111111111111',
+  exp_month: '12',
+  exp_year: '2028',
+  cvc: '123',
+  card_holder: 'Test User',
+  installments: 1,
+  is_three_ds: true,
+  three_ds_auth_type: 'challenge_v2',
+  browser_info: browserInfo,
+});
+```
+
+## Manejo de Errores
+
+Cuando 3D Secure falla o es cancelado, el callback `onError` recibe un mensaje descriptivo:
+
+```tsx
+<BloqueCheckout
+  checkoutId={checkoutId}
+  clientSecret={clientSecret}
+  onError={(error) => {
+    if (error.includes('3D Secure')) {
+      console.log('La verificación 3DS falló o fue cancelada');
+    }
+  }}
+/>
+```
+
+Errores comunes relacionados con 3DS:
+- `3D Secure verification was cancelled` — el usuario cerró el overlay del challenge
+- `3ds_challenge_failed` — la verificación bancaria falló
+
+## Próximos Pasos
+
+- [Métodos de Pago](/pay/guide/payments/methods) - Aprende sobre los métodos de pago disponibles
+- [Manejo de Errores](/pay/guide/advanced/error-handling) - Maneja todos los tipos de errores
+- [Webhooks](/pay/guide/webhooks/setup) - Recibe actualizaciones de estado de pagos

@@ -3,7 +3,9 @@ export type {
   BloqueCheckoutOptions,
   BloqueCheckoutProps,
   BloqueInitOptions,
+  PaymentMethod,
   PaymentResult,
+  ThreeDSChallengeData,
 } from './bloque-checkout';
 export {
   BloqueCheckout,

@@ -7,7 +7,7 @@ Aprende cómo manejar errores con gracia en Bloque Payments.
 Bloque Payments puede devolver diferentes tipos de errores:
 
 - **Errores de validación**: Datos de entrada inválidos
-- **Errores de autenticación**: Access token inválido o faltante
+- **Errores de autenticación**: Clave API inválida o revocada
 - **Errores de pago**: Fallos en el procesamiento de pagos
 - **Errores de red**: Problemas de conexión
 
@@ -19,7 +19,7 @@ Usa el callback `onError` para manejar errores en el componente React:
 import { init, BloqueCheckout } from '@bloque/payments-react';
 
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'production',
 });
 
@@ -58,7 +58,7 @@ const app = express();
 app.use(express.json());
 
 const bloque = new Bloque({
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
   mode: 'production',
 });
 
@@ -70,11 +70,14 @@ app.post('/api/create-checkout', async (req, res) => {
       success_url: req.body.success_url,
     });
 
-    res.json({ id: checkout.id, url: checkout.url });
+    res.json({
+      id: checkout.id,
+      url: checkout.url,
+      clientSecret: checkout.client_secret,
+    });
   } catch (error) {
     console.error('Error de checkout:', error);
 
-    // Determinar tipo de error
     if (error.status === 400) {
       return res.status(400).json({
         success: false,
@@ -87,11 +90,10 @@ app.post('/api/create-checkout', async (req, res) => {
       return res.status(401).json({
         success: false,
         error: 'No autorizado',
-        message: 'Access token inválido',
+        message: 'Clave API inválida o revocada',
       });
     }
 
-    // Error genérico
     res.status(500).json({
       success: false,
       error: 'Error interno del servidor',
@@ -111,6 +113,16 @@ app.listen(3000);
 - `invalid_card_number`: Número de tarjeta inválido
 - `invalid_expiry`: Fecha de vencimiento inválida
 - `invalid_cvv`: Código de seguridad inválido
+
+### Errores de 3D Secure
+
+- `3ds_challenge_cancelled`: El usuario canceló la verificación 3D Secure
+- `3ds_challenge_failed`: La autenticación 3D Secure falló
+
+### Errores de Claves API
+
+- `E_KEY_REVOKED`: La secret key ha sido revocada
+- `E_INVALID_KEY`: La secret key es inválida
 
 ### Errores Generales
 
@@ -145,6 +157,12 @@ function getErrorMessage(errorCode: string): string {
 
     case 'expired_checkout':
       return 'La sesión de pago ha expirado. Por favor inicia una nueva.';
+
+    case '3ds_challenge_cancelled':
+      return 'La verificación 3D Secure fue cancelada. Por favor intenta de nuevo.';
+
+    case '3ds_challenge_failed':
+      return 'La autenticación 3D Secure falló. Por favor intenta con otra tarjeta o contacta a tu banco.';
 
     default:
       return 'El pago falló. Por favor intenta de nuevo o contacta a soporte.';

@@ -56,7 +56,7 @@ Payment methods are handled automatically through Bloque's hosted checkout. Your
 import { Bloque } from '@bloque/payments';
 
 const bloque = new Bloque({
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
   mode: 'production',
 });
 
@@ -73,8 +73,8 @@ const checkout = await bloque.checkout.create({
   success_url: 'https://yourapp.com/success',
 });
 
-// Send checkout.id to frontend
-res.json({ id: checkout.id });
+// Send checkout.id and client_secret to frontend
+res.json({ id: checkout.id, clientSecret: checkout.client_secret });
 ```
 
 ### Frontend (React)
@@ -83,19 +83,20 @@ res.json({ id: checkout.id });
 import { init, BloqueCheckout } from '@bloque/payments-react';
 
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'production',
 });
 
 interface CheckoutPageProps {
-  // checkoutId is generated on the backend using @bloque/payments
   checkoutId: string;
+  clientSecret: string;
 }
 
-function CheckoutPage({ checkoutId }: CheckoutPageProps) {
+function CheckoutPage({ checkoutId, clientSecret }: CheckoutPageProps) {
   return (
     <BloqueCheckout
       checkoutId={checkoutId}
+      clientSecret={clientSecret}
       onSuccess={(data) => {
         console.log('Payment successful!', data.payment_id);
         window.location.href = '/success';
@@ -148,8 +149,13 @@ If you don't specify `paymentMethods`, only card payment will be shown by defaul
 
 1. User selects card payment in hosted checkout
 2. User enters card details
-3. Real-time authorization is processed
-4. `onSuccess` or `onError` callback is triggered
+3. If 3D Secure is required, a challenge overlay is displayed
+4. Real-time authorization is processed
+5. `onSuccess` or `onError` callback is triggered
+
+:::tip 3D Secure
+Card payments may trigger 3D Secure (3DS) authentication for additional security. The hosted checkout handles 3DS challenges automatically — the user sees a full-screen overlay with the bank's verification form. See [3D Secure](/pay/guide/advanced/three-d-secure) for details.
+:::
 
 ## PSE Payment Flow
 
@@ -191,11 +197,13 @@ The `BloqueCheckout` component provides callbacks for different outcomes:
 Card payments are processed securely:
 
 - **PCI-DSS compliant**: Card data never touches your servers
-- **3D Secure**: Additional authentication layer for secure transactions
+- **3D Secure**: Additional authentication layer with full-screen challenge overlay
 - **Encryption**: End-to-end encryption for all sensitive data
+- **API key model**: Three-credential system (secret key, publishable key, client secret)
 
 ## Next Steps
 
 - [React Integration](/pay/guide/react/basic-setup) - Set up the BloqueCheckout component
+- [3D Secure](/pay/guide/advanced/three-d-secure) - Learn about 3D Secure authentication
 - [Webhooks](/pay/guide/webhooks/setup) - Handle payment notifications
 - [Error Handling](/pay/guide/advanced/error-handling) - Handle payment errors

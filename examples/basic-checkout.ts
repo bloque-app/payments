@@ -3,7 +3,7 @@ import { Bloque } from '../packages/payments/src';
 async function main() {
   const bloque = new Bloque({
     mode: 'sandbox',
-    accessToken: 'your-access-token-here',
+    secretKey: 'sk_test_your-secret-key-here',
   });
 
   const checkout = await bloque.checkout.create({

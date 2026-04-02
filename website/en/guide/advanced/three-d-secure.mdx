@@ -1,0 +1,228 @@
+# 3D Secure
+
+3D Secure (3DS) adds an extra layer of authentication to card payments, reducing fraud and shifting liability to the card issuer.
+
+## How It Works
+
+When 3D Secure is required for a payment, the cardholder's bank presents a verification challenge (e.g., an OTP, biometric prompt, or approval in their banking app). Bloque handles this automatically through a full-screen overlay in the hosted checkout.
+
+```
+1. User enters card details in hosted checkout
+   ↓
+2. Payment is submitted
+   ↓
+3. If 3DS is required, a challenge overlay appears
+   ↓
+4. User completes bank verification
+   ↓
+5. Payment is finalized
+   ↓
+6. onSuccess/onError callback is triggered
+```
+
+## Hosted Checkout (Automatic)
+
+If you're using the hosted checkout via `BloqueCheckout`, 3D Secure is handled automatically. The checkout iframe detects when a 3DS challenge is needed and displays a full-screen overlay with the bank's verification form.
+
+### React Example
+
+```tsx
+import { init, BloqueCheckout } from '@bloque/payments-react';
+
+init({
+  publishableKey: 'pk_live_...',
+  mode: 'production',
+});
+
+function CheckoutPage({ checkoutId, clientSecret }) {
+  return (
+    <BloqueCheckout
+      checkoutId={checkoutId}
+      clientSecret={clientSecret}
+      onThreeDSChallenge={() => {
+        console.log('3DS challenge started');
+      }}
+      onSuccess={(data) => {
+        console.log('Payment approved!', data.payment_id);
+      }}
+      onError={(error) => {
+        console.error('Payment failed:', error);
+      }}
+    />
+  );
+}
+```
+
+### Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `onThreeDSChallenge` | `() => void` | Called when the hosted checkout starts a 3DS challenge overlay |
+| `threeDsAuthType` | `string` | Sandbox-only: force a specific 3DS scenario (e.g. `'challenge_v2'`) |
+
+## Direct Card Payments (Server-Side)
+
+For server-side card payments using `@bloque/payments`, you can enable 3D Secure by setting `is_three_ds: true` and providing `browser_info` collected from the user's browser.
+
+### Step 1: Collect Browser Info
+
+On the client, collect the browser fingerprint fields required for 3DS:
+
+```typescript
+const browserInfo = {
+  browser_color_depth: String(screen.colorDepth),
+  browser_screen_height: String(screen.height),
+  browser_screen_width: String(screen.width),
+  browser_language: navigator.language,
+  browser_user_agent: navigator.userAgent,
+  browser_tz: String(new Date().getTimezoneOffset()),
+};
+```
+
+### Step 2: Create Payment with 3DS
+
+Send the browser info to your backend and create the payment:
+
+```typescript
+import { Bloque } from '@bloque/payments';
+
+const bloque = new Bloque({
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
+  mode: 'production',
+});
+
+const payment = await bloque.payments.create(checkoutId, {
+  type: 'card',
+  number: cardNumber,
+  exp_month: expMonth,
+  exp_year: expYear,
+  cvc: cvc,
+  card_holder: cardHolder,
+  installments: 1,
+  is_three_ds: true,
+  browser_info: browserInfo,
+});
+```
+
+### Step 3: Handle 3DS Challenge
+
+If the payment requires 3D Secure, the response includes a `three_ds` object:
+
+```typescript
+if (payment.three_ds) {
+  console.log('3DS step:', payment.three_ds.current_step);
+
+  // payment.three_ds.iframe contains the HTML or URL for the challenge
+  // Render it in an iframe or redirect the user
+}
+```
+
+### Step 4: Poll for Result
+
+After the user completes the 3DS challenge, poll for the final payment status:
+
+```typescript
+const result = await bloque.payments.getStatus(payment.payment_id);
+
+if (result.status === 'approved') {
+  console.log('Payment approved!');
+} else if (result.status === 'rejected') {
+  console.log('Payment rejected:', result.message);
+}
+```
+
+## Types
+
+### `BrowserInfo`
+
+```typescript
+interface BrowserInfo {
+  browser_color_depth: string;
+  browser_screen_height: string;
+  browser_screen_width: string;
+  browser_language: string;
+  browser_user_agent: string;
+  browser_tz: string;
+}
+```
+
+### `ThreeDSData`
+
+```typescript
+interface ThreeDSData {
+  current_step: string;
+  iframe: string;   // HTML content or URL for the 3DS challenge
+}
+```
+
+### `PaymentResponse`
+
+```typescript
+interface PaymentResponse {
+  payment_id: string;
+  status: 'approved' | 'pending' | 'rejected';
+  message: string;
+  amount: number;
+  currency: string;
+  reference: string;
+  three_ds?: ThreeDSData;
+}
+```
+
+## Testing 3D Secure
+
+In sandbox mode, use the `three_ds_auth_type` parameter to test different 3DS scenarios:
+
+### Hosted Checkout
+
+```tsx
+<BloqueCheckout
+  checkoutId={checkoutId}
+  clientSecret={clientSecret}
+  threeDsAuthType="challenge_v2"
+  onSuccess={handleSuccess}
+/>
+```
+
+### Direct Payment
+
+```typescript
+const payment = await bloque.payments.create(checkoutId, {
+  type: 'card',
+  number: '4111111111111111',
+  exp_month: '12',
+  exp_year: '2028',
+  cvc: '123',
+  card_holder: 'Test User',
+  installments: 1,
+  is_three_ds: true,
+  three_ds_auth_type: 'challenge_v2',
+  browser_info: browserInfo,
+});
+```
+
+## Error Handling
+
+When 3D Secure fails or is cancelled, the `onError` callback receives a descriptive message:
+
+```tsx
+<BloqueCheckout
+  checkoutId={checkoutId}
+  clientSecret={clientSecret}
+  onError={(error) => {
+    if (error.includes('3D Secure')) {
+      console.log('3DS verification failed or was cancelled');
+    }
+  }}
+/>
+```
+
+Common 3DS-related errors:
+- `3D Secure verification was cancelled` — user closed the challenge overlay
+- `3ds_challenge_failed` — bank verification failed
+
+## Next Steps
+
+- [Payment Methods](/pay/guide/payments/methods) - Learn about available payment methods
+- [Error Handling](/pay/guide/advanced/error-handling) - Handle all error types
+- [Webhooks](/pay/guide/webhooks/setup) - Receive payment status updates

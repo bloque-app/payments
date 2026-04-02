@@ -10,7 +10,7 @@ Create a checkout session with items and redirect URLs:
 import { Bloque } from '@bloque/payments';
 
 const bloque = new Bloque({
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
   mode: 'production',
 });
 
@@ -30,7 +30,8 @@ const checkout = await bloque.checkout.create({
 });
 
 console.log('Checkout URL:', checkout.url);
-// Redirect customer to checkout.url
+console.log('Client Secret:', checkout.client_secret);
+// Redirect customer to checkout.url or pass id + client_secret to frontend
 ```
 
 ## Checkout Parameters
@@ -129,8 +130,10 @@ console.log('Status:', checkout.status); // 'canceled'
 ```typescript
 {
   id: string;                // Checkout ID
+  urn: string;               // Checkout URN (e.g. did:bloque:payments:...)
   object: 'checkout';
   url: string;               // Payment URL
+  client_secret?: string;    // Checkout-scoped JWT for browser-side auth (when using secretKey)
   status: string;            // Checkout status
   amount_total: number;      // Total amount
   amount_subtotal: number;   // Subtotal
@@ -142,6 +145,10 @@ console.log('Status:', checkout.status); // 'canceled'
   expires_at: string;
 }
 ```
+
+:::tip Client Secret
+When creating a checkout with a `secretKey`, the response includes a `client_secret` field. This is a checkout-scoped JWT that should be passed to the frontend along with the `checkoutId` for browser-side authentication.
+:::
 
 ## Next Steps
 
