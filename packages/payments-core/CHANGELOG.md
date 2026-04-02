@@ -1,5 +1,11 @@
 # @bloque/payments-core
 
+## 0.1.0
+
+### Minor Changes
+
+- 04e497e: New api keys system and 3d secure
+
 ## 0.0.3
 
 ### Patch Changes
