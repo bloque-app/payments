@@ -22,9 +22,12 @@ export interface AppearanceConfig {
 
 export interface BloqueInitOptions {
   /**
-   * Your Bloque public API key
+   * Your Bloque publishable API key (pk_live_... or pk_test_...)
    */
-  publicApiKey: string;
+  publishableKey?: string;
+
+  /** @deprecated Use publishableKey instead */
+  publicApiKey?: string;
 
   /**
    * Operation mode
@@ -46,8 +49,16 @@ export interface BloqueCheckoutOptions {
   checkoutId: string;
 
   /**
-   * Your Bloque public API key (optional if you called BloqueCheckout.init())
+   * Checkout-scoped JWT returned from the create checkout API
    */
+  clientSecret?: string;
+
+  /**
+   * Your Bloque publishable key (pk_live_... or pk_test_...)
+   */
+  publishableKey?: string;
+
+  /** @deprecated Use publishableKey instead */
   publicApiKey?: string;
 
   /**
@@ -106,6 +117,16 @@ export interface BloqueCheckoutOptions {
    * Custom CSS styles to apply to the iframe
    */
   iframeStyles?: Record<string, string>;
+
+  /**
+   * Sandbox-only Wompi 3DS scenario (e.g. challenge_v2). Forwarded to hosted checkout via checkout-init.
+   */
+  three_ds_auth_type?: string;
+
+  /**
+   * Called when the hosted checkout starts a 3DS challenge (overlay is shown in the parent page).
+   */
+  onThreeDSChallenge?: () => void;
 }
 
 export interface PaymentResult {
@@ -122,11 +143,17 @@ export type CheckoutMessageType =
   | 'checkout-ready'
   | 'checkout-init'
   | 'payment-result'
-  | 'payment-error';
+  | 'payment-error'
+  | '3ds-challenge';
+
+export interface ThreeDSChallengeData {
+  iframe: string;
+}
 
 export interface CheckoutMessage {
   type: CheckoutMessageType;
   checkoutId?: string;
   data?: PaymentResult;
   error?: string;
+  threeDsData?: ThreeDSChallengeData;
 }

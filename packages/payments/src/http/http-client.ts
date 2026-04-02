@@ -3,15 +3,20 @@ import {
   APIError,
   AuthenticationError,
   BloqueError,
+  KeyRevokedError,
   RateLimitError,
 } from '../errors/bloque-error';
 
 const SDK_NAME = pkg.name;
 const SDK_VERSION = pkg.version;
 
+const JWT_REFRESH_BUFFER_MS = 60_000; // refresh 1 min before expiry
+
 export interface HttpClientConfig {
   baseURL: string;
-  accessToken: string;
+  exchangeBaseURL?: string;
+  accessToken?: string;
+  secretKey?: string;
   timeout?: number;
   maxRetries?: number;
   userAgent?: string;
@@ -26,29 +31,129 @@ export interface RequestOptions {
   idempotencyKey?: string;
 }
 
+interface CachedToken {
+  accessToken: string;
+  expiresAt: number; // epoch ms
+}
+
 export class HttpClient {
   private readonly baseURL: string;
-  private readonly accessToken: string;
+  private readonly exchangeBaseURL: string;
+  private readonly secretKey?: string;
+  private readonly staticAccessToken?: string;
   private readonly timeout: number;
   private readonly maxRetries: number;
   private readonly userAgent: string;
 
+  private cachedToken: CachedToken | null = null;
+  private exchangePromise: Promise<CachedToken> | null = null;
+
   constructor(config: HttpClientConfig) {
     this.baseURL = config.baseURL;
-    this.accessToken = config.accessToken;
+    this.exchangeBaseURL = config.exchangeBaseURL ?? config.baseURL;
+    this.secretKey = config.secretKey;
+    this.staticAccessToken = config.accessToken;
     this.timeout = config.timeout ?? 10_000;
     this.maxRetries = config.maxRetries ?? 2;
     this.userAgent = `${SDK_NAME}/${SDK_VERSION}`;
   }
 
+  private async getAccessToken(): Promise<string> {
+    if (this.staticAccessToken) {
+      return this.staticAccessToken;
+    }
+
+    if (!this.secretKey) {
+      throw new AuthenticationError('No secretKey or accessToken configured');
+    }
+
+    if (
+      this.cachedToken &&
+      Date.now() < this.cachedToken.expiresAt - JWT_REFRESH_BUFFER_MS
+    ) {
+      return this.cachedToken.accessToken;
+    }
+
+    if (!this.exchangePromise) {
+      this.exchangePromise = this.exchangeKey().finally(() => {
+        this.exchangePromise = null;
+      });
+    }
+
+    const token = await this.exchangePromise;
+    this.cachedToken = token;
+    return token.accessToken;
+  }
+
+  private async exchangeKey(): Promise<CachedToken> {
+    const url = `${this.exchangeBaseURL}/origins/api-keys/exchange`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': this.userAgent,
+        },
+        body: JSON.stringify({ key: this.secretKey }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const code = (payload as any).code;
+        const message = (payload as any).message || 'Exchange failed';
+
+        if (
+          response.status === 401 &&
+          (code === 'E_KEY_REVOKED' || code === 'E_INVALID_KEY')
+        ) {
+          const keyId = this.secretKey
+            ? this.secretKey.slice(0, 20)
+            : undefined;
+          throw new KeyRevokedError(message, keyId);
+        }
+
+        throw new AuthenticationError(message, code);
+      }
+
+      const data = (await response.json()) as {
+        access_token: string;
+        expires_in: number;
+      };
+
+      return {
+        accessToken: data.access_token,
+        expiresAt: Date.now() + data.expires_in * 1000,
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof KeyRevokedError || error instanceof AuthenticationError) {
+        throw error;
+      }
+      throw new BloqueError(
+        `Key exchange failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
   async request<T>(options: RequestOptions): Promise<T> {
     const url = this.buildURL(options.path, options.params);
-    const headers = this.buildHeaders(options.headers, options.idempotencyKey);
-
     let lastError: unknown;
 
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
+        const token = await this.getAccessToken();
+        const headers = this.buildHeaders(
+          token,
+          options.headers,
+          options.idempotencyKey,
+        );
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
@@ -63,6 +168,11 @@ export class HttpClient {
 
         if (!response.ok) {
           const error = await this.parseError(response);
+
+          if (response.status === 401 && this.secretKey && attempt === 0) {
+            this.cachedToken = null;
+            continue;
+          }
 
           if (!this.isRetryableHttpStatus(response.status)) {
             throw error;
@@ -110,11 +220,12 @@ export class HttpClient {
   }
 
   private buildHeaders(
+    accessToken: string,
     customHeaders?: Record<string, string>,
     idempotencyKey?: string,
   ): Record<string, string> {
     return {
-      Authorization: `Bearer ${this.accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
       'User-Agent': this.userAgent,
       ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
@@ -136,6 +247,9 @@ export class HttpClient {
 
     switch (response.status) {
       case 401:
+        if (code === 'E_KEY_REVOKED') {
+          return new KeyRevokedError(message, payload.key_id);
+        }
         return new AuthenticationError(message, code);
       case 429:
         return new RateLimitError(message, code);
@@ -154,6 +268,10 @@ export class HttpClient {
   }
 
   private isRetryableError(error: unknown): boolean {
+    if (error instanceof KeyRevokedError) {
+      return false;
+    }
+
     if (
       error instanceof AuthenticationError ||
       error instanceof APIError ||

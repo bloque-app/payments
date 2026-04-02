@@ -44,3 +44,14 @@ export class ValidationError extends BloqueError {
     Object.setPrototypeOf(this, ValidationError.prototype);
   }
 }
+
+export class KeyRevokedError extends BloqueError {
+  constructor(
+    message: string,
+    public keyId?: string,
+  ) {
+    super(message);
+    this.name = 'KeyRevokedError';
+    Object.setPrototypeOf(this, KeyRevokedError.prototype);
+  }
+}

@@ -7,6 +7,7 @@ export type {
   CheckoutStatus,
 } from './types/checkout';
 export type {
+  ASSETS,
   Bep20Route,
   BloqueRoute,
   KusamaRoute,
@@ -19,7 +20,10 @@ export type {
   TronRoute,
 } from './types/common';
 export type {
+  BrowserInfo,
+  CardPaymentFormData,
   CreatePaymentParams,
   PaymentResponse,
   PaymentSubmitPayload,
+  ThreeDSData,
 } from './types/payment';

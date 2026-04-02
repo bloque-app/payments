@@ -5,11 +5,21 @@ import {
 import { useEffect, useRef } from 'react';
 
 export interface BloqueCheckoutProps
-  extends Omit<BloqueCheckoutOptions, 'checkoutId'> {
+  extends Omit<BloqueCheckoutOptions, 'checkoutId' | 'three_ds_auth_type'> {
   /**
    * The checkout ID returned from your backend after creating a checkout session
    */
   checkoutId: string;
+
+  /**
+   * Checkout-scoped JWT returned from the create checkout API
+   */
+  clientSecret?: string;
+
+  /**
+   * Sandbox-only Wompi 3DS scenario (e.g. challenge_v2).
+   */
+  threeDsAuthType?: string;
 
   /**
    * Additional CSS class name for the container div
@@ -48,6 +58,8 @@ export interface BloqueCheckoutProps
  */
 export function BloqueCheckout({
   checkoutId,
+  clientSecret,
+  publishableKey,
   publicApiKey,
   mode,
   checkoutUrl,
@@ -58,6 +70,8 @@ export function BloqueCheckout({
   onSuccess,
   onError,
   onPending,
+  onThreeDSChallenge,
+  threeDsAuthType,
   iframeStyles,
   className,
   style,
@@ -70,6 +84,8 @@ export function BloqueCheckout({
 
     const checkout = new CoreBloqueCheckout({
       checkoutId,
+      clientSecret,
+      publishableKey,
       publicApiKey,
       mode,
       checkoutUrl,
@@ -80,6 +96,8 @@ export function BloqueCheckout({
       onSuccess,
       onError,
       onPending,
+      onThreeDSChallenge,
+      three_ds_auth_type: threeDsAuthType,
       iframeStyles,
     });
 
@@ -93,6 +111,8 @@ export function BloqueCheckout({
     };
   }, [
     checkoutId,
+    clientSecret,
+    publishableKey,
     publicApiKey,
     mode,
     checkoutUrl,
@@ -103,6 +123,8 @@ export function BloqueCheckout({
     onSuccess,
     onError,
     onPending,
+    onThreeDSChallenge,
+    threeDsAuthType,
     iframeStyles,
   ]);
 
@@ -115,6 +137,7 @@ export type {
   BloqueInitOptions,
   PaymentMethod,
   PaymentResult,
+  ThreeDSChallengeData,
 } from '@bloque/payments-core';
 // Re-export types and utilities from core for convenience
 export {
