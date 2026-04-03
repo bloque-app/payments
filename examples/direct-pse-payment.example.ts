@@ -7,14 +7,12 @@
 import { Bloque } from '../packages/payments/src';
 
 if (!process.env.BLOQUE_RUN_PSE_EXAMPLE) {
-  console.log(
-    'Skipped — set BLOQUE_RUN_PSE_EXAMPLE=1 to run.',
-  );
+  console.log('Skipped — set BLOQUE_RUN_PSE_EXAMPLE=1 to run.');
   process.exit(0);
 }
 
-const secretKey = process.env.BLOQUE_SECRET_KEY;
-const paymentUrn = process.env.BLOQUE_PAYMENT_URN;
+const secretKey = process.env.BLOQUE_SECRET_KEY!;
+const paymentUrn = process.env.BLOQUE_PAYMENT_URN!;
 
 if (!secretKey || !paymentUrn) {
   console.error('BLOQUE_SECRET_KEY and BLOQUE_PAYMENT_URN are required.');

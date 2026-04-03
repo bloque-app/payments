@@ -17,13 +17,11 @@ if (!process.env.BLOQUE_RUN_CARD_EXAMPLE) {
   process.exit(0);
 }
 
-const secretKey = process.env.BLOQUE_SECRET_KEY;
-const paymentUrn = process.env.BLOQUE_PAYMENT_URN;
+const secretKey = process.env.BLOQUE_SECRET_KEY!;
+const paymentUrn = process.env.BLOQUE_PAYMENT_URN!;
 
 if (!secretKey || !paymentUrn) {
-  console.error(
-    'BLOQUE_SECRET_KEY and BLOQUE_PAYMENT_URN are required.',
-  );
+  console.error('BLOQUE_SECRET_KEY and BLOQUE_PAYMENT_URN are required.');
   process.exit(1);
 }
 
@@ -47,7 +45,8 @@ async function main() {
         cvv: '123',
         email: 'test@example.com',
         is_three_ds: true,
-        three_ds_auth_type: process.env.BLOQUE_THREE_DS_AUTH_TYPE ?? 'challenge_v2',
+        three_ds_auth_type:
+          process.env.BLOQUE_THREE_DS_AUTH_TYPE ?? 'challenge_v2',
         browser_info: {
           browser_color_depth: '24',
           browser_screen_height: '1080',
