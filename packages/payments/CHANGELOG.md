@@ -1,5 +1,11 @@
 # @bloque/payments
 
+## 0.1.2
+
+### Patch Changes
+
+- Upgrade the Missing fields for direct payments
+
 ## 0.1.1
 
 ### Patch Changes
