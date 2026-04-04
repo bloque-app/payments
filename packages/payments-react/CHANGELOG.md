@@ -1,5 +1,13 @@
 # @bloque/payments-react
 
+## 0.1.3
+
+### Patch Changes
+
+- Upgrade the internal versions
+- Updated dependencies
+  - @bloque/payments-core@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes

@@ -13,7 +13,7 @@
     },
     "packages/payments": {
       "name": "@bloque/payments",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "devDependencies": {
         "@rslib/core": "catalog:",
         "@types/node": "catalog:",
@@ -23,7 +23,7 @@
     },
     "packages/payments-core": {
       "name": "@bloque/payments-core",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "devDependencies": {
         "@rslib/core": "catalog:",
         "@types/node": "catalog:",
@@ -33,7 +33,7 @@
     },
     "packages/payments-react": {
       "name": "@bloque/payments-react",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@bloque/payments-core": "workspace:*",
       },

@@ -1,5 +1,11 @@
 # @bloque/payments
 
+## 0.1.3
+
+### Patch Changes
+
+- Upgrade the internal versions
+
 ## 0.1.2
 
 ### Patch Changes
