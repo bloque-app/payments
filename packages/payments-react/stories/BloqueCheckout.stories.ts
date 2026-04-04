@@ -10,68 +10,91 @@ const meta = {
   },
   tags: ['autodocs'],
   argTypes: {
-    amount: { control: 'number' },
-    requireEmail: { control: 'boolean' },
-    showMethodSelector: { control: 'boolean' },
-    availableMethods: {
+    checkoutId: { control: 'text' },
+    clientSecret: { control: 'text' },
+    publishableKey: { control: 'text' },
+    mode: {
+      control: 'radio',
+      options: ['production', 'sandbox'],
+    },
+    checkoutUrl: { control: 'text' },
+    showInstallments: { control: 'boolean' },
+    paymentMethods: {
       control: 'check',
       options: ['card', 'pse', 'cash'],
     },
+    threeDsAuthType: { control: 'text' },
+    className: { control: 'text' },
   },
   args: {
-    onSubmit: fn(),
+    checkoutId: 'checkout_demo_123',
+    onReady: fn(),
     onSuccess: fn(),
     onError: fn(),
+    onPending: fn(),
+    onThreeDSChallenge: fn(),
   },
 } satisfies Meta<typeof BloqueCheckout>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  args: {
-    amount: 50000,
-  },
-};
+export const Default: Story = {};
 
-export const WithAllMethods: Story = {
+export const WithAllPaymentMethods: Story = {
   args: {
-    amount: 100000,
-    availableMethods: ['card', 'pse', 'cash'],
-    showMethodSelector: true,
+    paymentMethods: ['card', 'pse', 'cash'],
   },
 };
 
 export const CardOnly: Story = {
   args: {
-    amount: 25000,
-    availableMethods: ['card'],
-    showMethodSelector: false,
+    paymentMethods: ['card'],
   },
 };
 
 export const PSEOnly: Story = {
   args: {
-    amount: 75000,
-    availableMethods: ['pse'],
-    showMethodSelector: false,
+    paymentMethods: ['pse'],
   },
 };
 
-export const WithoutEmailRequired: Story = {
+export const WithInstallments: Story = {
   args: {
-    amount: 30000,
-    requireEmail: false,
+    showInstallments: true,
   },
 };
 
 export const CustomAppearance: Story = {
   args: {
-    amount: 45000,
     appearance: {
       primaryColor: '#64d66aff',
       borderRadius: '18px',
       fontFamily: 'system-ui, sans-serif',
+    },
+  },
+};
+
+export const SandboxMode: Story = {
+  args: {
+    mode: 'sandbox',
+    publishableKey: 'pk_test_demo_key',
+  },
+};
+
+export const WithClientSecret: Story = {
+  args: {
+    clientSecret: 'cs_demo_jwt_token',
+  },
+};
+
+export const CustomIframeStyles: Story = {
+  args: {
+    iframeStyles: {
+      width: '100%',
+      minHeight: '500px',
+      border: 'none',
+      borderRadius: '12px',
     },
   },
 };

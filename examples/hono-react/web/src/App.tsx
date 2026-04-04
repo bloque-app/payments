@@ -8,8 +8,10 @@ import { BloqueCheckout } from '../../../../packages/payments-react/src/index';
 type PaymentIntentResponse = {
   checkoutId: string;
   amountTotal: number;
+  clientSecret: string;
   asset: string;
   status: string;
+  checkoutUrl: string;
 };
 
 const API_BASE_URL = 'http://localhost:8787';
@@ -17,17 +19,21 @@ const PUBLISHABLE_KEY =
   import.meta.env.VITE_PUBLISHABLE_KEY ??
   import.meta.env.VITE_PUBLIC_API_KEY ??
   'pk_test_your_key_here';
-const CLIENT_SECRET = import.meta.env.VITE_CLIENT_SECRET;
+
 const CHECKOUT_URL = import.meta.env.VITE_CHECKOUT_URL;
 const THREE_DS_AUTH_TYPE = import.meta.env.VITE_THREE_DS_AUTH_TYPE;
 const BLOQUE_MODE: 'sandbox' | 'production' =
   import.meta.env.VITE_BLOQUE_MODE === 'production' ? 'production' : 'sandbox';
 
+  console.log('PUBLISHABLE_KEY', PUBLISHABLE_KEY);
+  console.log('CHECKOUT_URL', CHECKOUT_URL);
+  console.log('BLOQUE_MODE', BLOQUE_MODE);
+  console.log('THREE_DS_AUTH_TYPE', THREE_DS_AUTH_TYPE);
 const product = {
   name: 'Pack de Donacion',
   description:
-    'Checkout de ejemplo creado desde Hono. El backend arma un carrito de 3 items de 1 USD cada uno.',
-  price: 3,
+    'Checkout de ejemplo creado desde Hono. El backend arma un carrito de 2 items de 1 USD cada uno.',
+  price: 2,
   currency: 'USD' as const,
   image:
     'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=400&fit=crop',
@@ -37,6 +43,8 @@ const product = {
 
 const App = () => {
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [asset, setAsset] = useState<string | null>(null);
   const [amountTotal, setAmountTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -44,7 +52,7 @@ const App = () => {
 
   const totalLabel = useMemo(() => {
     if (amountTotal === null || asset !== 'DUSD/6') {
-      return '$3.00';
+      return '$2.00';
     }
 
     return new Intl.NumberFormat('en-US', {
@@ -74,8 +82,10 @@ const App = () => {
 
       const payload = (await response.json()) as PaymentIntentResponse;
       setCheckoutId(payload.checkoutId);
+      setClientSecret(payload.clientSecret);
       setAsset(payload.asset);
       setAmountTotal(payload.amountTotal);
+      setCheckoutUrl(payload.checkoutUrl);
     } catch (requestError) {
       const message =
         requestError instanceof Error
@@ -85,6 +95,8 @@ const App = () => {
       setCheckoutId(null);
       setAsset(null);
       setAmountTotal(null);
+      setClientSecret(null);
+      setCheckoutUrl(null);
     } finally {
       setLoading(false);
     }
@@ -157,7 +169,7 @@ const App = () => {
               <p className="product-description">{product.description}</p>
 
               <div className="product-price">
-                <span className="current-price">$3.00</span>
+                <span className="current-price">$2.00</span>
               </div>
 
               <div className="product-features">
@@ -213,10 +225,6 @@ const App = () => {
                   <span>Item 2</span>
                   <span>$1.00</span>
                 </div>
-                <div className="summary-row">
-                  <span>Item 3</span>
-                  <span>$1.00</span>
-                </div>
                 <div className="summary-divider"></div>
                 <div className="summary-row total">
                   <span>Total</span>
@@ -241,12 +249,12 @@ const App = () => {
 
               {error ? <p className="checkout-error">Error: {error}</p> : null}
 
-              {checkoutId ? (
+              {checkoutId && clientSecret && checkoutUrl ? (
                 <div className="checkout-form">
                   <BloqueCheckout
                     checkoutId={checkoutId}
                     publishableKey={PUBLISHABLE_KEY}
-                    clientSecret={CLIENT_SECRET}
+                    clientSecret={clientSecret}
                     mode={BLOQUE_MODE}
                     checkoutUrl={CHECKOUT_URL}
                     paymentMethods={['card']}
