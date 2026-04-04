@@ -16,6 +16,28 @@ export interface ThreeDSData {
   iframe: string;
 }
 
+export type PayeeIdType = 'CC' | 'NIT' | 'RUT' | 'PASSPORT' | 'DRIVER_LICENSE';
+
+/**
+ * Customer / payee information sent with a direct payment.
+ * Mirrors the server-side `Payee` class. Required fields depend on
+ * the payment method — see controller docs for per-method requirements.
+ */
+export interface Payee {
+  name: string;
+  email: string;
+  phone?: string;
+  id_type?: PayeeIdType;
+  id_number?: string;
+  address_line1?: string;
+  address_line2?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postal_code?: string;
+}
+
 export interface CardPaymentFormData {
   cardNumber: string;
   cardholderName: string;
@@ -23,6 +45,12 @@ export interface CardPaymentFormData {
   expiryYear: string;
   cvv: string;
   email: string;
+  /** Number of installments (use `1` for a single payment). */
+  installments: number;
+  /** Currency code (e.g. `'COP'`, `'USD'`). Determines the source asset. */
+  currency: string;
+  phone?: string;
+  webhookUrl?: string;
   /** When true, the payment may return `three_ds` for challenge rendering. */
   is_three_ds?: boolean;
   browser_info?: BrowserInfo;
@@ -36,6 +64,9 @@ export interface PsePaymentFormData {
   documentType: string;
   documentNumber: string;
   bankCode: string;
+  name: string;
+  phone: string;
+  webhookUrl?: string;
 }
 
 export interface CashPaymentFormData {
@@ -43,6 +74,8 @@ export interface CashPaymentFormData {
   documentType: string;
   documentNumber: string;
   fullName: string;
+  phone?: string;
+  webhookUrl?: string;
 }
 
 type PaymentFormDataMap = {
@@ -99,20 +132,18 @@ export interface PaymentResponse {
 /** JSON body for card payment requests (internal builder output). */
 export interface CardPaymentPayload {
   payment_urn: string;
-  customer_email: string;
   number: string;
   cvc: string;
   exp_month: string;
   exp_year: string;
   card_holder: string;
+  installments: number;
+  currency: string;
   is_three_ds?: boolean;
   browser_info?: BrowserInfo;
   three_ds_auth_type?: string;
   webhook_url?: string;
-  payee: {
-    name: string;
-    email: string;
-  };
+  payee: Payee;
 }
 
 /** JSON body for PSE payment requests (internal builder output). */
@@ -125,6 +156,8 @@ export interface PsePaymentPayload {
     email: string;
     id_type: string;
     id_number: string;
+    name: string;
+    phone: string;
   };
 }
 
@@ -137,5 +170,6 @@ export interface CashPaymentPayload {
     email: string;
     id_type: string;
     id_number: string;
+    phone?: string;
   };
 }

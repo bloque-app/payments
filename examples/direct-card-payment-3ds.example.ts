@@ -44,6 +44,8 @@ async function main() {
         expiryYear: '2028',
         cvv: '123',
         email: 'test@example.com',
+        installments: 1,
+        currency: 'COP',
         is_three_ds: true,
         three_ds_auth_type:
           process.env.BLOQUE_THREE_DS_AUTH_TYPE ?? 'challenge_v2',

@@ -46,7 +46,9 @@ export class PaymentResource extends BaseResource {
    *       expiryMonth: '12',
    *       expiryYear: '2025',
    *       cvv: '123',
-   *       email: 'john@example.com'
+   *       email: 'john@example.com',
+   *       installments: 1,
+   *       currency: 'COP',
    *     }
    *   }
    * });
@@ -115,18 +117,23 @@ export class PaymentResource extends BaseResource {
   ): CardPaymentPayload {
     const payload: CardPaymentPayload = {
       payment_urn: paymentUrn,
-      customer_email: data.email || '',
       number: data.cardNumber,
       cvc: data.cvv,
       exp_month: data.expiryMonth,
       exp_year: data.expiryYear,
       card_holder: data.cardholderName,
+      installments: data.installments,
+      currency: data.currency,
       payee: {
         name: data.cardholderName,
         email: data.email,
+        ...(data.phone && { phone: data.phone }),
       },
     };
 
+    if (data.webhookUrl) {
+      payload.webhook_url = data.webhookUrl;
+    }
     if (data.is_three_ds !== undefined) {
       payload.is_three_ds = data.is_three_ds;
     }
@@ -148,10 +155,13 @@ export class PaymentResource extends BaseResource {
       payment_urn: paymentUrn,
       person_type: data.personType,
       bank_code: data.bankCode,
+      ...(data.webhookUrl && { webhook_url: data.webhookUrl }),
       payee: {
         email: data.email,
         id_type: data.documentType,
         id_number: data.documentNumber,
+        name: data.name ?? '',
+        phone: data.phone ?? '',
       },
     };
   }
@@ -162,11 +172,13 @@ export class PaymentResource extends BaseResource {
   ): CashPaymentPayload {
     return {
       payment_urn: paymentUrn,
+      ...(data.webhookUrl && { webhook_url: data.webhookUrl }),
       payee: {
         name: data.fullName,
         email: data.email,
         id_type: data.documentType,
         id_number: data.documentNumber,
+        ...(data.phone && { phone: data.phone }),
       },
     };
   }
