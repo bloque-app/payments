@@ -1,5 +1,14 @@
 # @bloque/payments-react
 
+## 0.1.1
+
+### Patch Changes
+
+- Upgrade the SDK endpoints
+- Align with API new secret & public keys
+- Updated dependencies
+  - @bloque/payments-core@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes
