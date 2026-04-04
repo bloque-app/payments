@@ -1,24 +1,72 @@
 import type { ASSETS, Metadata, PayoutRoute } from './common';
 import type { Customer } from './customer';
 
+export type PaymentType = 'shopping_cart' | 'subscription';
+
+export type SubscriptionStatus = 'active' | 'expired' | 'eliminated' | 'paid';
+
+/**
+ * Cron-based subscription schedule. Required when `payment_type` is `subscription`.
+ */
+export interface SubscriptionConfig {
+  type: 'cron';
+  /** Cron expression, e.g. `"0 0 1 * *"` for monthly. */
+  cron: string;
+  /** ISO 8601 start date. */
+  startDate?: string;
+  /** ISO 8601 end date. */
+  endDate?: string;
+  status?: SubscriptionStatus;
+}
+
+export interface TaxInfo {
+  name: string;
+  /** Tax rate as a decimal, e.g. `0.19` for 19%. */
+  rate: number;
+}
+
+export type IdType = 'CC' | 'NIT' | 'RUT' | 'PASSPORT' | 'DRIVER_LICENSE';
+
+export interface PayeerInfo {
+  name: string;
+  email?: string;
+  phone?: string;
+  address_line1?: string;
+  address_line2?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postal_code?: string;
+  id_type?: IdType;
+  id_number?: string;
+}
+
 export interface CreateCheckoutPayload {
   name: string;
   description?: string;
   image_url?: string;
   asset: ASSETS;
-  payment_type: 'shopping_cart';
+  payment_type: PaymentType;
   items: {
     name: string;
     amount: string;
     quantity: number;
+    sku?: string;
+    description?: string;
     image_url?: string;
   }[];
-  redirect_url: string;
+  subscription?: SubscriptionConfig;
+  success_url?: string;
+  redirect_url?: string;
   cancel_url?: string;
   webhook_url?: string;
   expires_at?: string;
   metadata?: Metadata;
   payout_route?: PayoutRoute[];
+  tax?: TaxInfo[];
+  discount_code?: string;
+  payeer?: PayeerInfo;
 }
 
 export interface CreateCheckoutResponse {
@@ -79,14 +127,17 @@ export interface CheckoutParams {
    * Name of the checkout session.
    */
   name: string;
+
   /**
    * Optional description of the checkout.
    */
   description?: string;
+
   /**
    * URL of an image representing the checkout.
    */
   image_url?: string;
+
   /**
    * List of items to be charged.
    * Must contain at least one item.
@@ -96,19 +147,36 @@ export interface CheckoutParams {
   /**
    * Asset used for the checkout.
    *
-   * @default 'dUSD/6'
+   * @default 'DUSD/6'
    */
   asset?: ASSETS;
 
   /**
+   * Checkout type. Use `subscription` for recurring payments.
+   *
+   * @default 'shopping_cart'
+   */
+  payment_type?: PaymentType;
+
+  /**
+   * Subscription schedule. Required when `payment_type` is `'subscription'`.
+   */
+  subscription?: SubscriptionConfig;
+
+  /**
    * URL the customer will be redirected to after a successful payment.
    */
-  success_url: string;
+  success_url?: string;
 
   /**
    * URL the customer will be redirected to if the payment is canceled.
    */
-  cancel_url: string;
+  cancel_url?: string;
+
+  /**
+   * Redirect URL for subscription payments after checkout completion.
+   */
+  redirect_url?: string;
 
   /**
    * Arbitrary metadata attached to the checkout.
@@ -124,6 +192,8 @@ export interface CheckoutParams {
 
   /**
    * Payment methods enabled for this checkout.
+   * Controls which payment tabs appear in the hosted checkout UI.
+   * Not sent to the server — used only by the hosted checkout app.
    *
    * @default ['card', 'pse', 'cash']
    */
@@ -139,6 +209,21 @@ export interface CheckoutParams {
    * Webhook URL for payment status change notifications.
    */
   webhook_url?: string;
+
+  /**
+   * Tax lines applied to the checkout total.
+   */
+  tax?: TaxInfo[];
+
+  /**
+   * Discount code to apply to the checkout.
+   */
+  discount_code?: string;
+
+  /**
+   * Pre-filled payeer (buyer) information.
+   */
+  payeer?: PayeerInfo;
 }
 
 /**
@@ -196,6 +281,11 @@ export interface Checkout {
   status: CheckoutStatus;
 
   /**
+   * Checkout type — `shopping_cart` or `subscription`.
+   */
+  payment_type: PaymentType;
+
+  /**
    * Total amount to be paid, including taxes, discounts,
    * or additional charges.
    */
@@ -220,6 +310,11 @@ export interface Checkout {
    * Items included in the checkout.
    */
   items: CheckoutItem[];
+
+  /**
+   * Subscription configuration, present when `payment_type` is `subscription`.
+   */
+  subscription?: SubscriptionConfig;
 
   /**
    * Metadata attached to the checkout.
