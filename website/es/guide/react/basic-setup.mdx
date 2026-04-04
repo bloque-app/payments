@@ -36,20 +36,20 @@ El componente `BloqueCheckout` renderiza un iframe con la página de checkout al
 
 ## Inicialización del SDK
 
-Antes de usar el componente `BloqueCheckout`, inicializa el SDK con tu Public API Key:
+Antes de usar el componente `BloqueCheckout`, inicializa el SDK con tu publishable key:
 
 ```tsx
 import { init } from '@bloque/payments-react';
 
 // Inicializar una vez al inicio de tu aplicación (ej: en main.tsx o App.tsx)
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'sandbox', // o 'production'
 });
 ```
 
-:::tip Public API Key
-Usa tu **Public API Key** para inicializar el SDK en el frontend. Esta clave es segura para exponer en código del lado del cliente. Tu **Secret API Key** solo debe usarse en el backend.
+:::tip Publishable Key
+Usa tu **publishable key** (`pk_live_...` / `pk_test_...`) para inicializar el SDK en el frontend. Esta clave es segura para exponer en código del lado del cliente. Tu **secret key** (`sk_live_...`) solo debe usarse en el backend.
 :::
 
 ## Uso Básico
@@ -59,19 +59,20 @@ import { init, BloqueCheckout } from '@bloque/payments-react';
 
 // Inicializar una vez al inicio de tu aplicación
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'production',
 });
 
 interface CheckoutPageProps {
-  // El checkoutId se genera en el backend usando @bloque/payments
   checkoutId: string;
+  clientSecret: string;
 }
 
-function CheckoutPage({ checkoutId }: CheckoutPageProps) {
+function CheckoutPage({ checkoutId, clientSecret }: CheckoutPageProps) {
   return (
     <BloqueCheckout
       checkoutId={checkoutId}
+      clientSecret={clientSecret}
       onSuccess={(data) => {
         console.log('¡Pago exitoso!', data.payment_id);
         window.location.href = '/success';
@@ -98,7 +99,7 @@ const app = express();
 app.use(express.json());
 
 const bloque = new Bloque({
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
   mode: 'production',
 });
 
@@ -110,7 +111,10 @@ app.post('/api/create-checkout', async (req, res) => {
       success_url: 'https://tuapp.com/success',
     });
 
-    res.json({ id: checkout.id });
+    res.json({
+      id: checkout.id,
+      clientSecret: checkout.client_secret,
+    });
   } catch (error) {
     console.error('Error creando checkout:', error);
     res.status(500).json({ error: error.message });
@@ -127,11 +131,14 @@ app.listen(3000);
 | Prop | Tipo | Requerido | Descripción |
 |------|------|-----------|-------------|
 | `checkoutId` | `string` | Sí | ID de sesión de checkout de tu backend |
+| `clientSecret` | `string` | No | JWT con alcance de checkout de la respuesta de crear checkout |
+| `publishableKey` | `string` | No | Publishable key (opcional si llamaste `init()`) |
 | `onSuccess` | `(data: PaymentResult) => void` | No | Llamado cuando el pago es exitoso |
 | `onError` | `(error: string) => void` | No | Llamado cuando el pago falla |
 | `onPending` | `(data: PaymentResult) => void` | No | Llamado cuando el pago está pendiente |
 | `onReady` | `() => void` | No | Llamado cuando el iframe del checkout está listo |
-| `publicApiKey` | `string` | No | Public API key (opcional si llamaste `init()`) |
+| `onThreeDSChallenge` | `() => void` | No | Llamado cuando inicia un challenge 3D Secure |
+| `threeDsAuthType` | `string` | No | Tipo de auth 3DS para pruebas en sandbox (ej: `'challenge_v2'`) |
 | `mode` | `'production' \| 'sandbox'` | No | Modo de entorno (opcional si llamaste `init()`) |
 | `checkoutUrl` | `string` | No | URL de checkout personalizada |
 | `appearance` | `AppearanceConfig` | No | Personalización de UI |
@@ -268,12 +275,15 @@ import { init, BloqueCheckout } from '@bloque/payments-react';
 import { useState, useEffect } from 'react';
 
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'production',
 });
 
 export default function CheckoutPage() {
-  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [checkoutData, setCheckoutData] = useState<{
+    id: string;
+    clientSecret: string;
+  } | null>(null);
 
   useEffect(() => {
     fetch('/api/create-checkout', {
@@ -281,14 +291,15 @@ export default function CheckoutPage() {
       body: JSON.stringify({ amount: 5000 }),
     })
       .then(res => res.json())
-      .then(data => setCheckoutId(data.id));
+      .then(data => setCheckoutData(data));
   }, []);
 
-  if (!checkoutId) return <div>Cargando...</div>;
+  if (!checkoutData) return <div>Cargando...</div>;
 
   return (
     <BloqueCheckout
-      checkoutId={checkoutId}
+      checkoutId={checkoutData.id}
+      clientSecret={checkoutData.clientSecret}
       onSuccess={(data) => {
         console.log('¡Éxito!', data);
       }}
@@ -304,12 +315,15 @@ import { init, BloqueCheckout } from '@bloque/payments-react';
 import { useState, useEffect } from 'react';
 
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'production',
 });
 
 export default function CheckoutPage() {
-  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [checkoutData, setCheckoutData] = useState<{
+    id: string;
+    clientSecret: string;
+  } | null>(null);
 
   useEffect(() => {
     fetch('/api/create-checkout', {
@@ -317,14 +331,15 @@ export default function CheckoutPage() {
       body: JSON.stringify({ amount: 5000 }),
     })
       .then(res => res.json())
-      .then(data => setCheckoutId(data.id));
+      .then(data => setCheckoutData(data));
   }, []);
 
-  if (!checkoutId) return <div>Cargando...</div>;
+  if (!checkoutData) return <div>Cargando...</div>;
 
   return (
     <BloqueCheckout
-      checkoutId={checkoutId}
+      checkoutId={checkoutData.id}
+      clientSecret={checkoutData.clientSecret}
       onSuccess={(data) => {
         console.log('¡Éxito!', data);
       }}
@@ -357,5 +372,6 @@ const handleSuccess = (result: PaymentResult) => {
 ## Próximos Pasos
 
 - [Personalización](/pay/guide/react/customization) - Personaliza la UI
+- [3D Secure](/pay/guide/advanced/three-d-secure) - Agrega autenticación 3D Secure
 - [API de Checkout](/pay/guide/checkout/overview) - Aprende más sobre la API de Checkout
 - [Webhooks](/pay/guide/webhooks/setup) - Maneja notificaciones de pago

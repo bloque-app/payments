@@ -13,15 +13,15 @@ Bloque Payments es una plataforma de procesamiento de pagos con TypeScript como 
 Bloque utiliza un enfoque de checkout alojado seguro donde los pagos se procesan a través de un iframe. Esto garantiza el cumplimiento de PCI sin manejar datos sensibles de tarjetas en tus servidores.
 
 ```
-1. Tu backend crea una sesión de checkout
+1. Tu backend crea una sesión de checkout (usando secret key)
    ↓
-2. Backend recibe checkout_id
+2. Backend recibe checkout_id + client_secret
    ↓
-3. Pasa checkout_id al componente React
+3. Pasa checkout_id y client_secret al componente React
    ↓
-4. El componente renderiza iframe con el checkout
+4. El componente renderiza iframe con el checkout (usando publishable key)
    ↓
-5. Usuario completa el pago
+5. Usuario completa el pago (con 3D Secure si es requerido)
    ↓
 6. Se disparan los callbacks
 ```
@@ -34,12 +34,13 @@ Componentes React pre-construidos para integración rápida:
 import { init, BloqueCheckout } from '@bloque/payments-react';
 
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'production',
 });
 
 <BloqueCheckout
   checkoutId={checkoutId}
+  clientSecret={clientSecret}
   onSuccess={(data) => {
     console.log('¡Pago exitoso!', data.payment_id);
   }}
@@ -53,7 +54,8 @@ init({
 
 Infraestructura compatible con PCI con:
 - Iframe de checkout alojado (datos de tarjeta nunca tocan tus servidores)
-- Gestión segura de claves API
+- Modelo de tres credenciales (secret key, publishable key, client secret)
+- Autenticación 3D Secure para pagos con tarjeta
 - Verificación de firma de webhooks
 - Cifrado de extremo a extremo
 
@@ -81,22 +83,22 @@ Construido con TypeScript desde cero:
 Bloque Payments sigue un patrón de arquitectura seguro:
 
 ```
-┌─────────────────┐      ┌─────────────────┐      ┌──────────────┐
-│ Tu Backend      │─────▶│  API Bloque     │─────▶│ Checkout ID  │
-│ (@bloque/pay)   │      │                 │      │              │
-└─────────────────┘      └─────────────────┘      └──────────────┘
+┌─────────────────┐      ┌─────────────────┐      ┌───────────────────────┐
+│ Tu Backend      │─────▶│  API Bloque     │─────▶│ Checkout ID +         │
+│ (secret key)    │      │  (key exchange) │      │ Client Secret (JWT)   │
+└─────────────────┘      └─────────────────┘      └───────────────────────┘
                                                          │
                                                          ▼
                          ┌─────────────────────────────────────────┐
                          │  Componente React + Checkout Alojado    │
-                         │  (@bloque/payments-react)               │
+                         │  (publishable key + client secret)      │
                          └─────────────────────────────────────────┘
 ```
 
-1. **Tu Backend** crea sesiones de checkout usando el SDK de Bloque
-2. **API de Bloque** devuelve un checkout ID
-3. **Frontend** renderiza el checkout alojado en un iframe
-4. **Usuario** completa el pago de forma segura
+1. **Tu Backend** crea sesiones de checkout usando el secret key (`sk_live_...`)
+2. **API de Bloque** intercambia la clave por un JWT y devuelve checkout ID + client secret
+3. **Frontend** renderiza el checkout alojado usando publishable key (`pk_live_...`) + client secret
+4. **Usuario** completa el pago de forma segura (con 3D Secure si es requerido)
 
 ## Paquetes
 
@@ -109,13 +111,13 @@ El ecosistema de Bloque Payments consiste en dos paquetes principales:
 
 ### SDK de Backend (`@bloque/payments`)
 
-SDK del lado del servidor para crear checkouts:
+SDK del lado del servidor para crear checkouts y procesar pagos:
 
 ```typescript
 import { Bloque } from '@bloque/payments';
 
 const bloque = new Bloque({
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
   mode: 'production',
 });
 
@@ -126,6 +128,7 @@ const checkout = await bloque.checkout.create({
 });
 
 console.log('Checkout ID:', checkout.id);
+console.log('Client Secret:', checkout.client_secret);
 ```
 
 ### Componentes React (`@bloque/payments-react`)
@@ -136,12 +139,13 @@ Componente de checkout alojado para React:
 import { init, BloqueCheckout } from '@bloque/payments-react';
 
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'production',
 });
 
 <BloqueCheckout
   checkoutId={checkoutId}
+  clientSecret={clientSecret}
   onSuccess={handleSuccess}
 />
 ```
@@ -176,4 +180,5 @@ init({
 - [Inicio Rápido](/pay/guide/start/getting-started) - Ponte en marcha rápidamente
 - [Integración React](/pay/guide/react/basic-setup) - Usa el componente BloqueCheckout
 - [API de Checkout](/pay/guide/checkout/overview) - Crea páginas de checkout alojadas
+- [3D Secure](/pay/guide/advanced/three-d-secure) - Agrega autenticación 3D Secure
 - [Webhooks](/pay/guide/webhooks/setup) - Maneja eventos de pago

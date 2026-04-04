@@ -14,6 +14,8 @@ export interface CreateCheckoutPayload {
     image_url?: string;
   }[];
   redirect_url: string;
+  cancel_url?: string;
+  webhook_url?: string;
   expires_at?: string;
   metadata?: Metadata;
   payout_route?: PayoutRoute[];
@@ -132,16 +134,37 @@ export interface CheckoutParams {
    * Each route specifies a destination network and the amount or percentage to send.
    */
   payout_route?: PayoutRoute[];
+
+  /**
+   * Webhook URL for payment status change notifications.
+   */
+  webhook_url?: string;
+}
+
+/**
+ * Parameters for listing checkouts with optional filtering and pagination.
+ */
+export interface ListCheckoutParams {
+  status?: CheckoutStatus;
+  payment_type?: 'shopping_cart' | 'subscription';
+  payeer_search?: string;
+  from_date?: string;
+  to_date?: string;
+  limit?: number;
+  offset?: number;
+  order?: 'asc' | 'desc';
 }
 
 /**
  * Possible states of a checkout.
+ * Aligned with the server `Status` enum in the payments domain.
  */
 export type CheckoutStatus =
-  | 'pending' // Created and waiting for payment
-  | 'completed' // Successfully paid
-  | 'expired' // Expired without payment
-  | 'canceled'; // Manually or user canceled
+  | 'pending'
+  | 'paid'
+  | 'expired'
+  | 'deposited'
+  | 'cancelled';
 
 /**
  * Represents a checkout object returned by the API.

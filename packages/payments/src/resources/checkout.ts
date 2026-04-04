@@ -3,10 +3,16 @@ import type {
   CheckoutParams,
   CreateCheckoutPayload,
   CreateCheckoutResponse,
+  ListCheckoutParams,
 } from '../types/checkout';
 import { BaseResource } from './base';
 
 export class CheckoutResource extends BaseResource {
+  /**
+   * Create a new checkout session (payment link).
+   * @param params - Checkout creation parameters.
+   * @returns The newly created checkout.
+   */
   async create(params: CheckoutParams): Promise<Checkout> {
     const items = params.items.map((item) => ({
       name: item.name,
@@ -23,6 +29,8 @@ export class CheckoutResource extends BaseResource {
       image_url: params.image_url,
       items: items,
       redirect_url: params.success_url,
+      cancel_url: params.cancel_url,
+      webhook_url: params.webhook_url,
       expires_at: params.expires_at,
       metadata: params.metadata,
       payout_route: params.payout_route,
@@ -48,11 +56,38 @@ export class CheckoutResource extends BaseResource {
     };
   }
 
+  /**
+   * Retrieve a checkout by its link UUID.
+   * Maps to `GET /link/:url_id` on the server (JWT-authed).
+   *
+   * @param checkoutId - The link UUID (url_id) returned when the checkout was created.
+   */
   async retrieve(checkoutId: string): Promise<Checkout> {
-    return this.http.get<Checkout>(`/checkout/${checkoutId}`);
+    return this.http.get<Checkout>(`/link/${checkoutId}`);
   }
 
-  async cancel(checkoutId: string): Promise<Checkout> {
-    return this.http.post<Checkout>(`/checkout/${checkoutId}/cancel`);
+  /**
+   * Cancel a checkout by setting its status to `cancelled`.
+   * Maps to `PATCH /:payment_urn/status` on the server.
+   *
+   * @param paymentUrn - The payment URN (`did:bloque:payments:...`).
+   */
+  async cancel(paymentUrn: string): Promise<Checkout> {
+    return this.http.patch<Checkout>(`/${paymentUrn}/status`, {
+      status: 'cancelled',
+    });
+  }
+
+  /**
+   * List checkouts owned by the authenticated user.
+   * Maps to `GET /` on the server with optional query filters.
+   *
+   * @param params - Optional filtering and pagination parameters.
+   */
+  async list(params?: ListCheckoutParams): Promise<Checkout[]> {
+    return this.http.get<Checkout[]>(
+      '/',
+      params as Record<string, unknown> | undefined,
+    );
   }
 }

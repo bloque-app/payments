@@ -18,28 +18,34 @@ Instala el SDK de backend:
 
 <PackageManagerTabs command="add @bloque/payments" />
 
-## Clave API
+## Claves API
 
-Para usar Bloque Payments, necesitarás una clave API. Puedes obtener una desde el [Panel de Bloque](https://app.bloque.app/settings/api).
+Para usar Bloque Payments, necesitarás claves API. Puedes obtenerlas desde el [Panel de Bloque](https://app.bloque.app/settings/api).
 
-:::tip Claves API
-Bloque proporciona dos tipos de claves API:
-- **Public API Key**: Puede usarse de forma segura en el cliente (frontend) para inicializar el SDK.
-- **Secret API Key**: Solo debe usarse en el backend. Nunca la expongas en código del lado del cliente.
+Bloque usa un modelo de tres credenciales:
+
+| Credencial | Prefijo | Dónde | Propósito |
+|------------|---------|-------|-----------|
+| **Secret key** | `sk_test_` / `sk_live_` | Solo servidor | Se intercambia por un JWT de corta duración vía `/origins/api-keys/exchange` |
+| **Publishable key** | `pk_test_` / `pk_live_` | Navegador | Identifica al comercio; seguro para exponer en código del cliente |
+| **Client secret** | JWT | Navegador | JWT con alcance de checkout, devuelto al crear un checkout con secret key |
+
+:::warning Seguridad del Secret Key
+Tu **secret key** (`sk_live_...`) nunca debe exponerse en código del lado del cliente. Solo debe usarse en el servidor.
 :::
 
 ## Cómo Funciona
 
 ```
-1. Tu backend crea una sesión de checkout usando @bloque/payments
+1. Tu backend crea una sesión de checkout usando @bloque/payments (secret key)
    ↓
-2. Backend recibe checkout_id
+2. Backend recibe checkout_id + client_secret
    ↓
-3. Pasa checkout_id al componente React
+3. Pasa checkout_id y client_secret al componente React
    ↓
-4. El componente renderiza iframe con el checkout
+4. El componente renderiza iframe con el checkout (publishable key + client secret)
    ↓
-5. Usuario completa el pago
+5. Usuario completa el pago (con 3D Secure si es requerido)
    ↓
 6. Se disparan callbacks onSuccess/onError/onPending
 ```
@@ -59,16 +65,15 @@ import express from 'express';
 const app = express();
 app.use(express.json());
 
-// Inicializar SDK de Bloque
+// Inicializar SDK de Bloque con tu secret key
 const bloque = new Bloque({
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
   mode: 'production', // o 'sandbox' para pruebas
 });
 
 // Endpoint de checkout
 app.post('/api/create-checkout', async (req, res) => {
   try {
-    // Configura los datos del checkout en el backend
     const checkout = await bloque.checkout.create({
       name: 'Mi Producto',
       description: 'Descripción del producto',
@@ -82,7 +87,12 @@ app.post('/api/create-checkout', async (req, res) => {
       success_url: 'https://tuapp.com/success',
     });
 
-    res.json({ id: checkout.id, url: checkout.url });
+    // Devolver checkout id y client secret al frontend
+    res.json({
+      id: checkout.id,
+      url: checkout.url,
+      clientSecret: checkout.client_secret,
+    });
   } catch (error) {
     console.error('Error de checkout:', error);
     res.status(500).json({
@@ -104,19 +114,20 @@ import { init, BloqueCheckout } from '@bloque/payments-react';
 
 // Inicializar SDK (hacer esto una vez al inicio de la app)
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'production',
 });
 
 interface CheckoutPageProps {
-  // El checkoutId se genera en el backend usando @bloque/payments
   checkoutId: string;
+  clientSecret: string;
 }
 
-function CheckoutPage({ checkoutId }: CheckoutPageProps) {
+function CheckoutPage({ checkoutId, clientSecret }: CheckoutPageProps) {
   return (
     <BloqueCheckout
       checkoutId={checkoutId}
+      clientSecret={clientSecret}
       appearance={{
         primaryColor: '#10b981',
         borderRadius: '12px',
@@ -141,7 +152,15 @@ Crea un archivo `.env` en tu proyecto backend:
 
 ```bash
 # .env
-BLOQUE_ACCESS_TOKEN=tu_access_token_aqui
+BLOQUE_SECRET_KEY=sk_live_tu_secret_key_aqui
+BLOQUE_WEBHOOK_SECRET=tu_webhook_secret_aqui
+```
+
+Y para tu frontend:
+
+```bash
+# .env
+NEXT_PUBLIC_BLOQUE_PUBLISHABLE_KEY=pk_live_tu_publishable_key_aqui
 ```
 
 Cárgalas en tu aplicación:
@@ -150,7 +169,7 @@ Cárgalas en tu aplicación:
 import 'dotenv/config';
 
 const bloque = new Bloque({
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
   mode: 'production',
 });
 ```
@@ -161,24 +180,30 @@ const bloque = new Bloque({
 
 | Opción | Tipo | Requerido | Por Defecto | Descripción |
 |--------|------|-----------|-------------|-------------|
-| `accessToken` | `string` | Sí | - | Tu access token de Bloque |
+| `secretKey` | `string` | Sí* | - | Tu secret key de Bloque (`sk_test_...` / `sk_live_...`) |
 | `mode` | `'production' \| 'sandbox'` | Sí | - | Modo de entorno |
 | `webhookSecret` | `string` | No | - | Secreto para verificación de webhooks |
+| `timeout` | `number` | No | - | Timeout de request en milisegundos |
+| `maxRetries` | `number` | No | - | Número máximo de reintentos |
+
+*\* Se requiere `secretKey` (recomendado) o el legacy `accessToken`.*
 
 #### Modos
 
-- **`sandbox`**: Para pruebas y desarrollo. Sin transacciones reales.
-- **`production`**: Para operaciones en vivo con pagos reales.
+- **`sandbox`**: Para pruebas y desarrollo. Sin transacciones reales. Usa claves `sk_test_` / `pk_test_`.
+- **`production`**: Para operaciones en vivo con pagos reales. Usa claves `sk_live_` / `pk_live_`.
 
 ### Props del Componente React
 
 | Prop | Tipo | Requerido | Descripción |
 |------|------|-----------|-------------|
 | `checkoutId` | `string` | Sí | ID de sesión de checkout de tu backend |
+| `clientSecret` | `string` | No | JWT con alcance de checkout de la respuesta de crear checkout |
 | `onSuccess` | `function` | No | Llamado en pago exitoso |
 | `onError` | `function` | No | Llamado en error de pago |
 | `onPending` | `function` | No | Llamado cuando el pago está pendiente |
 | `onReady` | `function` | No | Llamado cuando el iframe está listo |
+| `onThreeDSChallenge` | `function` | No | Llamado cuando inicia un challenge 3D Secure |
 | `appearance` | `AppearanceConfig` | No | Personalización de UI |
 | `iframeStyles` | `Record<string, string>` | No | Estilos personalizados del iframe |
 
@@ -219,15 +244,15 @@ Usa modo sandbox para pruebas sin transacciones reales:
 ```typescript
 // Backend
 const bloque = new Bloque({
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
-  mode: 'sandbox', // Modo de prueba
+  secretKey: process.env.BLOQUE_SECRET_KEY!, // sk_test_...
+  mode: 'sandbox',
 });
 ```
 
 ```tsx
 // Frontend
 init({
-  publicApiKey: 'pk_test_...',
+  publishableKey: 'pk_test_...',
   mode: 'sandbox',
 });
 ```
@@ -249,6 +274,7 @@ Ahora que tienes la integración básica funcionando, explora más característi
 - [Integración React](/pay/guide/react/basic-setup) - Guía detallada de configuración React
 - [API de Checkout](/pay/guide/checkout/overview) - Crea páginas de checkout alojadas
 - [Métodos de Pago](/pay/guide/payments/methods) - Aprende sobre los métodos de pago disponibles
+- [3D Secure](/pay/guide/advanced/three-d-secure) - Agrega autenticación 3D Secure a pagos con tarjeta
 - [Webhooks](/pay/guide/webhooks/setup) - Configura webhooks para notificaciones de pago
 - [Manejo de Errores](/pay/guide/advanced/error-handling) - Maneja errores con gracia
 

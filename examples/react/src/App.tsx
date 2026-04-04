@@ -187,7 +187,7 @@ const App = () => {
               <div className="checkout-form">
                 <BloqueCheckout
                   checkoutId={checkoutId}
-                  publicApiKey={PUBLISHABLE_KEY}
+                  publishableKey={PUBLISHABLE_KEY}
                   clientSecret={CLIENT_SECRET}
                   appearance={appearance}
                   threeDsAuthType={THREE_DS_AUTH_TYPE}

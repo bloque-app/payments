@@ -2,7 +2,7 @@
  * Direct card payment with 3D Secure — server-side example.
  *
  * Usage:
- *   BLOQUE_RUN_CARD_EXAMPLE=1 BLOQUE_SECRET_KEY=sk_test_... BLOQUE_CHECKOUT_ID=<id> npx tsx examples/direct-card-payment-3ds.example.ts
+ *   BLOQUE_RUN_CARD_EXAMPLE=1 BLOQUE_SECRET_KEY=sk_test_... BLOQUE_PAYMENT_URN=did:bloque:payments:... npx tsx examples/direct-card-payment-3ds.example.ts
  *
  * IMPORTANT: browser_info values below are mocked. In a real integration the
  * browser_info MUST be collected from the user's browser (window.screen,
@@ -17,13 +17,11 @@ if (!process.env.BLOQUE_RUN_CARD_EXAMPLE) {
   process.exit(0);
 }
 
-const secretKey = process.env.BLOQUE_SECRET_KEY;
-const checkoutId = process.env.BLOQUE_CHECKOUT_ID;
+const secretKey = process.env.BLOQUE_SECRET_KEY!;
+const paymentUrn = process.env.BLOQUE_PAYMENT_URN!;
 
-if (!secretKey || !checkoutId) {
-  console.error(
-    'BLOQUE_SECRET_KEY and BLOQUE_CHECKOUT_ID are required.',
-  );
+if (!secretKey || !paymentUrn) {
+  console.error('BLOQUE_SECRET_KEY and BLOQUE_PAYMENT_URN are required.');
   process.exit(1);
 }
 
@@ -36,7 +34,7 @@ async function main() {
   console.log('Creating 3DS card payment…');
 
   const payment = await bloque.payments.create({
-    checkoutId,
+    paymentUrn,
     payment: {
       type: 'card',
       data: {
@@ -47,7 +45,8 @@ async function main() {
         cvv: '123',
         email: 'test@example.com',
         is_three_ds: true,
-        three_ds_auth_type: process.env.BLOQUE_THREE_DS_AUTH_TYPE ?? 'challenge_v2',
+        three_ds_auth_type:
+          process.env.BLOQUE_THREE_DS_AUTH_TYPE ?? 'challenge_v2',
         browser_info: {
           browser_color_depth: '24',
           browser_screen_height: '1080',
@@ -78,7 +77,7 @@ async function main() {
     const status = await bloque.payments.getStatus(payment.id);
     console.log(`[${i + 1}/${MAX_ATTEMPTS}] status: ${status.status}`);
 
-    if (status.status === 'completed' || status.status === 'failed') {
+    if (status.status === 'approved' || status.status === 'rejected') {
       console.log('Terminal status reached:', JSON.stringify(status, null, 2));
       return;
     }

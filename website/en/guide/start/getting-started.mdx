@@ -18,28 +18,34 @@ Install the backend SDK:
 
 <PackageManagerTabs command="add @bloque/payments" />
 
-## API Key
+## API Keys
 
-To use Bloque Payments, you'll need an API key. You can obtain one from the [Bloque Dashboard](https://app.bloque.app/settings/api).
+To use Bloque Payments, you'll need API keys. You can obtain them from the [Bloque Dashboard](https://app.bloque.app/settings/api).
 
-:::tip API Keys
-Bloque provides two types of API keys:
-- **Public API Key**: Can be safely used in the client (frontend) to initialize the SDK.
-- **Secret API Key**: Should only be used on the backend. Never expose it in client-side code.
+Bloque uses a three-credential model:
+
+| Credential | Prefix | Where | Purpose |
+|------------|--------|-------|---------|
+| **Secret key** | `sk_test_` / `sk_live_` | Server only | Exchanged for a short-lived JWT via `/origins/api-keys/exchange` |
+| **Publishable key** | `pk_test_` / `pk_live_` | Browser | Identifies the merchant; safe to expose in client-side code |
+| **Client secret** | JWT | Browser | Checkout-scoped JWT returned when creating a checkout with a secret key |
+
+:::warning Secret Key Security
+Your **secret key** (`sk_live_...`) must never be exposed in client-side code. It should only be used on the server.
 :::
 
 ## How It Works
 
 ```
-1. Your backend creates a checkout session using @bloque/payments
+1. Your backend creates a checkout session using @bloque/payments (secret key)
    ↓
-2. Backend receives checkout_id
+2. Backend receives checkout_id + client_secret
    ↓
-3. Pass checkout_id to React component
+3. Pass checkout_id and client_secret to React component
    ↓
-4. Component renders iframe with the checkout
+4. Component renders iframe with the checkout (publishable key + client secret)
    ↓
-5. User completes payment
+5. User completes payment (with 3D Secure if required)
    ↓
 6. onSuccess/onError/onPending callbacks are triggered
 ```
@@ -59,16 +65,15 @@ import express from 'express';
 const app = express();
 app.use(express.json());
 
-// Initialize Bloque SDK
+// Initialize Bloque SDK with your secret key
 const bloque = new Bloque({
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
   mode: 'production', // or 'sandbox' for testing
 });
 
 // Checkout endpoint
 app.post('/api/create-checkout', async (req, res) => {
   try {
-    // Configure checkout data in the backend
     const checkout = await bloque.checkout.create({
       name: 'My Product',
       description: 'Product description',
@@ -82,7 +87,12 @@ app.post('/api/create-checkout', async (req, res) => {
       success_url: 'https://yourapp.com/success',
     });
 
-    res.json({ id: checkout.id, url: checkout.url });
+    // Return both checkout id and client secret to the frontend
+    res.json({
+      id: checkout.id,
+      url: checkout.url,
+      clientSecret: checkout.client_secret,
+    });
   } catch (error) {
     console.error('Checkout error:', error);
     res.status(500).json({
@@ -104,19 +114,20 @@ import { init, BloqueCheckout } from '@bloque/payments-react';
 
 // Initialize SDK (do this once at app startup)
 init({
-  publicApiKey: 'pk_live_...',
+  publishableKey: 'pk_live_...',
   mode: 'production',
 });
 
 interface CheckoutPageProps {
-  // checkoutId is generated on the backend using @bloque/payments
   checkoutId: string;
+  clientSecret: string;
 }
 
-function CheckoutPage({ checkoutId }: CheckoutPageProps) {
+function CheckoutPage({ checkoutId, clientSecret }: CheckoutPageProps) {
   return (
     <BloqueCheckout
       checkoutId={checkoutId}
+      clientSecret={clientSecret}
       appearance={{
         primaryColor: '#10b981',
         borderRadius: '12px',
@@ -141,7 +152,15 @@ Create a `.env` file in your backend project:
 
 ```bash
 # .env
-BLOQUE_ACCESS_TOKEN=your_access_token_here
+BLOQUE_SECRET_KEY=sk_live_your_secret_key_here
+BLOQUE_WEBHOOK_SECRET=your_webhook_secret_here
+```
+
+And for your frontend:
+
+```bash
+# .env
+NEXT_PUBLIC_BLOQUE_PUBLISHABLE_KEY=pk_live_your_publishable_key_here
 ```
 
 Load them in your application:
@@ -150,7 +169,7 @@ Load them in your application:
 import 'dotenv/config';
 
 const bloque = new Bloque({
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
   mode: 'production',
 });
 ```
@@ -161,24 +180,30 @@ const bloque = new Bloque({
 
 | Option | Type | Required | Default | Description |
 |--------|------|----------|---------|-------------|
-| `accessToken` | `string` | Yes | - | Your Bloque access token |
+| `secretKey` | `string` | Yes* | - | Your Bloque secret key (`sk_test_...` / `sk_live_...`) |
 | `mode` | `'production' \| 'sandbox'` | Yes | - | Environment mode |
 | `webhookSecret` | `string` | No | - | Secret for webhook verification |
+| `timeout` | `number` | No | - | Request timeout in milliseconds |
+| `maxRetries` | `number` | No | - | Maximum number of retry attempts |
+
+*\* Either `secretKey` (recommended) or legacy `accessToken` is required.*
 
 #### Modes
 
-- **`sandbox`**: For testing and development. No real transactions.
-- **`production`**: For live operations with real payments.
+- **`sandbox`**: For testing and development. No real transactions. Use `sk_test_` / `pk_test_` keys.
+- **`production`**: For live operations with real payments. Use `sk_live_` / `pk_live_` keys.
 
 ### React Component Props
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | `checkoutId` | `string` | Yes | Checkout session ID from your backend |
+| `clientSecret` | `string` | No | Checkout-scoped JWT from the create checkout response |
 | `onSuccess` | `function` | No | Called on successful payment |
 | `onError` | `function` | No | Called on payment error |
 | `onPending` | `function` | No | Called when payment is pending |
 | `onReady` | `function` | No | Called when iframe is ready |
+| `onThreeDSChallenge` | `function` | No | Called when a 3D Secure challenge starts |
 | `appearance` | `AppearanceConfig` | No | UI customization |
 | `iframeStyles` | `Record<string, string>` | No | Custom iframe styles |
 
@@ -223,15 +248,15 @@ Use sandbox mode for testing without real transactions:
 ```typescript
 // Backend
 const bloque = new Bloque({
-  accessToken: process.env.BLOQUE_ACCESS_TOKEN!,
-  mode: 'sandbox', // Test mode
+  secretKey: process.env.BLOQUE_SECRET_KEY!, // sk_test_...
+  mode: 'sandbox',
 });
 ```
 
 ```tsx
 // Frontend
 init({
-  publicApiKey: 'pk_test_...',
+  publishableKey: 'pk_test_...',
   mode: 'sandbox',
 });
 ```
@@ -254,6 +279,7 @@ Now that you have basic integration working, explore more features:
 - [React Integration](/pay/guide/react/basic-setup) - Detailed React setup guide
 - [Checkout API](/pay/guide/checkout/overview) - Create hosted checkout pages
 - [Payment Methods](/pay/guide/payments/methods) - Learn about available payment methods
+- [3D Secure](/pay/guide/advanced/three-d-secure) - Add 3D Secure authentication to card payments
 - [Webhooks](/pay/guide/webhooks/setup) - Set up webhooks for payment notifications
 - [Error Handling](/pay/guide/advanced/error-handling) - Handle errors gracefully
 

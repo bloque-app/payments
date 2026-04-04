@@ -86,7 +86,7 @@ export class HttpClient {
   }
 
   private async exchangeKey(): Promise<CachedToken> {
-    const url = `${this.exchangeBaseURL}/origins/api-keys/exchange`;
+    const url = `${this.exchangeBaseURL}/api-keys/exchange`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
@@ -132,7 +132,10 @@ export class HttpClient {
       };
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error instanceof KeyRevokedError || error instanceof AuthenticationError) {
+      if (
+        error instanceof KeyRevokedError ||
+        error instanceof AuthenticationError
+      ) {
         throw error;
       }
       throw new BloqueError(

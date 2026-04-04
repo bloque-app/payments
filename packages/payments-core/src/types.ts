@@ -1,4 +1,4 @@
-export type PaymentMethod = 'card' | 'pse';
+export type PaymentMethod = 'card' | 'pse' | 'cash';
 
 export interface AppearanceConfig {
   /**

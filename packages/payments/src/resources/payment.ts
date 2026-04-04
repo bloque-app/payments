@@ -1,23 +1,43 @@
 import type {
   CardPaymentFormData,
   CardPaymentPayload,
+  CashPaymentFormData,
+  CashPaymentPayload,
   CreatePaymentParams,
   PaymentResponse,
   PaymentSubmitPayload,
+  PsePaymentFormData,
+  PsePaymentPayload,
 } from '../types/payment';
 import { BaseResource } from './base';
 
+interface ServerDirectPaymentOutput {
+  payment_id: string;
+  status: 'approved' | 'rejected' | 'pending';
+  message: string;
+  amount: number;
+  currency: string;
+  reference?: string;
+  checkout_url?: string;
+  payment_code?: string;
+  order_id?: string;
+  order_status?: string;
+  three_ds?: { current_step: string; iframe: string };
+  created_at: string;
+}
+
 export class PaymentResource extends BaseResource {
   /**
-   * Create a payment for an existing checkout session
+   * Process a direct payment for an existing checkout.
+   * Maps to `POST /:type` on the server with `payment_urn` in the body.
    *
-   * @param params - Checkout ID and payment data
-   * @returns Payment response
+   * @param params - Payment URN and payment data (card / PSE / cash).
+   * @returns Payment response with status and type-specific fields.
    *
    * @example
    * ```typescript
    * const payment = await bloque.payments.create({
-   *   checkoutId: 'checkout_abc123',
+   *   paymentUrn: 'did:bloque:payments:abc123',
    *   payment: {
    *     type: 'card',
    *     data: {
@@ -33,14 +53,29 @@ export class PaymentResource extends BaseResource {
    * ```
    */
   async create(params: CreatePaymentParams): Promise<PaymentResponse> {
-    const paymentPayload = this.buildPaymentPayload(params.payment);
+    const paymentUrn = params.paymentUrn ?? params.checkoutId ?? '';
+    const paymentPayload = this.buildPaymentPayload(params.payment, paymentUrn);
 
-    const paymentResponse = await this.http.post<PaymentResponse>(
-      `/checkout/${params.checkoutId}/pay/${params.payment.type}`,
+    const raw = await this.http.post<ServerDirectPaymentOutput>(
+      `/${params.payment.type}`,
       paymentPayload,
     );
 
-    return paymentResponse;
+    return {
+      id: raw.payment_id,
+      object: 'payment',
+      status: raw.status,
+      message: raw.message,
+      amount: raw.amount,
+      currency: raw.currency,
+      reference: raw.reference,
+      checkout_url: raw.checkout_url,
+      payment_code: raw.payment_code,
+      order_id: raw.order_id,
+      order_status: raw.order_status,
+      three_ds: raw.three_ds,
+      created_at: raw.created_at,
+    };
   }
 
   /**
@@ -53,24 +88,43 @@ export class PaymentResource extends BaseResource {
 
   private buildPaymentPayload(
     payment: PaymentSubmitPayload,
+    paymentUrn: string,
   ): Record<string, unknown> {
     switch (payment.type) {
       case 'card':
-        return this.buildCardPayload(payment.data) as unknown as Record<
-          string,
-          unknown
-        >;
+        return this.buildCardPayload(
+          payment.data,
+          paymentUrn,
+        ) as unknown as Record<string, unknown>;
+      case 'pse':
+        return this.buildPsePayload(
+          payment.data,
+          paymentUrn,
+        ) as unknown as Record<string, unknown>;
+      case 'cash':
+        return this.buildCashPayload(
+          payment.data,
+          paymentUrn,
+        ) as unknown as Record<string, unknown>;
     }
   }
 
-  private buildCardPayload(data: CardPaymentFormData): CardPaymentPayload {
+  private buildCardPayload(
+    data: CardPaymentFormData,
+    paymentUrn: string,
+  ): CardPaymentPayload {
     const payload: CardPaymentPayload = {
+      payment_urn: paymentUrn,
       customer_email: data.email || '',
       number: data.cardNumber,
       cvc: data.cvv,
       exp_month: data.expiryMonth,
       exp_year: data.expiryYear,
       card_holder: data.cardholderName,
+      payee: {
+        name: data.cardholderName,
+        email: data.email,
+      },
     };
 
     if (data.is_three_ds !== undefined) {
@@ -84,5 +138,36 @@ export class PaymentResource extends BaseResource {
     }
 
     return payload;
+  }
+
+  private buildPsePayload(
+    data: PsePaymentFormData,
+    paymentUrn: string,
+  ): PsePaymentPayload {
+    return {
+      payment_urn: paymentUrn,
+      person_type: data.personType,
+      bank_code: data.bankCode,
+      payee: {
+        email: data.email,
+        id_type: data.documentType,
+        id_number: data.documentNumber,
+      },
+    };
+  }
+
+  private buildCashPayload(
+    data: CashPaymentFormData,
+    paymentUrn: string,
+  ): CashPaymentPayload {
+    return {
+      payment_urn: paymentUrn,
+      payee: {
+        name: data.fullName,
+        email: data.email,
+        id_type: data.documentType,
+        id_number: data.documentNumber,
+      },
+    };
   }
 }

@@ -3,27 +3,27 @@ import { Bloque } from '../packages/payments/src';
 async function main() {
   const bloque = new Bloque({
     mode: 'sandbox',
-    accessToken: 'your-access-token-here',
+    secretKey: 'sk_test_j14EPwdG1xSA9fPYEjKweHH6nrirCq7t',
   });
 
   const checkout = await bloque.checkout.create({
     name: 'Pack Profesional de Productividad',
     description:
       'Periféricos premium para trabajo intensivo y alto rendimiento',
-    asset: 'COPM/2',
+    asset: 'USD/6',
     image_url: 'https://cdn.bloque.app/checkouts/productivity-pack.png',
     items: [
       {
         name: 'Teclado mecánico Keychron K2',
         description: 'Wireless, RGB, switches Blue',
-        amount: 450_000_00,
-        quantity: 2,
+        amount: 1_000_000,
+        quantity: 1,
         image_url: 'https://cdn.bloque.app/items/keychron-k2.png',
       },
       {
         name: 'Mouse Logitech MX Master 3S',
         description: 'Inalámbrico, sensor 8K DPI',
-        amount: 380_000_00,
+        amount: 1_000_000,
         quantity: 1,
         image_url: 'https://cdn.bloque.app/items/mx-master-3s.png',
       },

@@ -1,7 +1,10 @@
 import { serve } from '@hono/node-server';
+import dotenv from 'dotenv';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { Bloque } from '../../../../packages/payments/src';
+
+dotenv.config();
 
 const accessToken = process.env.BLOQUE_ACCESS_TOKEN;
 const mode =
@@ -12,8 +15,12 @@ if (!accessToken) {
   throw new Error('Missing BLOQUE_ACCESS_TOKEN. Check api/.env.example');
 }
 
+console.log('accessToken', accessToken);
+console.log('mode', mode);
+console.log('port', port);
+
 const bloque = new Bloque({
-  accessToken,
+  secretKey: accessToken,
   mode,
 });
 
@@ -22,7 +29,7 @@ const app = new Hono();
 app.use(
   '*',
   cors({
-    origin: ['http://localhost:3000'],
+    origin: ['http://localhost:3000', 'http://localhost:3001'],
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type'],
   }),
@@ -51,12 +58,6 @@ app.post('/api/payment-intents', async (c) => {
           amount: 1_000000,
           quantity: 1,
         },
-        {
-          name: 'Item 1 USD - #3',
-          description: 'Tercer item de un dolar',
-          amount: 1_000000,
-          quantity: 1,
-        },
       ],
       success_url: 'http://localhost:3000/success',
       cancel_url: 'http://localhost:3000/cancel',
@@ -71,6 +72,8 @@ app.post('/api/payment-intents', async (c) => {
       amountTotal: checkout.amount_total,
       asset: checkout.asset,
       status: checkout.status,
+      clientSecret: checkout.client_secret,
+      checkoutUrl: checkout.url,
     });
   } catch (error) {
     console.error('Error creating payment intent:', error);
