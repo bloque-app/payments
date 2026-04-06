@@ -1,5 +1,13 @@
 # @bloque/payments-react
 
+## 0.1.4
+
+### Patch Changes
+
+- Fix checkout structures to map correctly status
+- Updated dependencies
+  - @bloque/payments-core@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes
