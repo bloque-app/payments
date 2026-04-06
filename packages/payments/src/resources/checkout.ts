@@ -1,11 +1,41 @@
 import type {
   Checkout,
   CheckoutParams,
+  CheckoutStatus,
   CreateCheckoutPayload,
   CreateCheckoutResponse,
   ListCheckoutParams,
 } from '../types/checkout';
 import { BaseResource } from './base';
+
+/**
+ * Maps a raw API payment object (any endpoint shape) into the SDK `Checkout`
+ * type. The API stores status inside `summary.status`; this helper hoists it
+ * to the top-level `status` field that consumers expect.
+ */
+export function toCheckout(raw: Record<string, any>): Checkout {
+  const summary = raw.summary as Record<string, any> | undefined;
+
+  return {
+    id: raw.url_id ?? raw.urn ?? '',
+    urn: raw.urn ?? '',
+    object: 'checkout',
+    url: raw.url ?? '',
+    status: (summary?.status ?? 'pending') as CheckoutStatus,
+    payment_type: raw.payment_type ?? 'shopping_cart',
+    amount_total: raw.amount ?? 0,
+    amount_subtotal: raw.amount ?? 0,
+    asset: raw.asset ?? raw.currency,
+    customer: summary?.payeer,
+    items: raw.items ?? [],
+    subscription: raw.subscription,
+    metadata: raw.metadata ?? undefined,
+    created_at: raw.created_at ?? '',
+    updated_at: raw.updated_at ?? '',
+    expires_at: raw.expires_at ?? null,
+    client_secret: raw.client_secret,
+  };
+}
 
 export class CheckoutResource extends BaseResource {
   /**
@@ -50,21 +80,15 @@ export class CheckoutResource extends BaseResource {
 
     const response = await this.http.post<CreateCheckoutResponse>('/', payload);
 
-    return {
-      id: response.url_id,
-      urn: response.payment.urn,
-      object: 'checkout',
-      url: response.payment.url,
-      status: response.payment.summary.status,
+    const checkout = toCheckout({
+      ...response.payment,
+      url_id: response.url_id,
       payment_type: paymentType,
-      amount_total: response.payment.amount,
-      amount_subtotal: response.payment.amount,
-      asset: response.payment.asset,
+    });
+
+    return {
+      ...checkout,
       items: params.items,
-      created_at: response.payment.created_at,
-      updated_at: response.payment.updated_at,
-      expires_at: response.payment.expires_at,
-      metadata: response.payment.metadata ?? undefined,
       client_secret: response.client_secret,
     };
   }
@@ -76,7 +100,8 @@ export class CheckoutResource extends BaseResource {
    * @param urlId - The link UUID (url_id) returned when the checkout was created.
    */
   async retrievePublic(urlId: string): Promise<Checkout> {
-    return this.http.get<Checkout>(`/by-link/${urlId}`);
+    const raw = await this.http.get<Record<string, any>>(`/by-link/${urlId}`);
+    return toCheckout(raw);
   }
 
   /**
@@ -87,7 +112,8 @@ export class CheckoutResource extends BaseResource {
    * @scope `payments.read`
    */
   async retrieve(checkoutId: string): Promise<Checkout> {
-    return this.http.get<Checkout>(`/link/${checkoutId}`);
+    const raw = await this.http.get<Record<string, any>>(`/link/${checkoutId}`);
+    return toCheckout(raw);
   }
 
   /**
@@ -98,9 +124,11 @@ export class CheckoutResource extends BaseResource {
    * @scope `payments.update_status`
    */
   async cancel(paymentUrn: string): Promise<Checkout> {
-    return this.http.patch<Checkout>(`/${paymentUrn}/status`, {
-      status: 'cancelled',
-    });
+    const raw = await this.http.patch<Record<string, any>>(
+      `/${paymentUrn}/status`,
+      { status: 'cancelled' },
+    );
+    return toCheckout(raw.payment ?? raw);
   }
 
   /**
@@ -111,9 +139,10 @@ export class CheckoutResource extends BaseResource {
    * @scope `payments.read`
    */
   async list(params?: ListCheckoutParams): Promise<Checkout[]> {
-    return this.http.get<Checkout[]>(
+    const raw = await this.http.get<Record<string, any>[]>(
       '/',
       params as Record<string, unknown> | undefined,
     );
+    return raw.map(toCheckout);
   }
 }

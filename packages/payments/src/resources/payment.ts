@@ -1,3 +1,4 @@
+import type { Checkout } from '../types/checkout';
 import type {
   CardPaymentFormData,
   CardPaymentPayload,
@@ -10,6 +11,7 @@ import type {
   PsePaymentPayload,
 } from '../types/payment';
 import { BaseResource } from './base';
+import { toCheckout } from './checkout';
 
 interface ServerDirectPaymentOutput {
   payment_id: string;
@@ -81,11 +83,13 @@ export class PaymentResource extends BaseResource {
   }
 
   /**
-   * Fetch current payment status by payment URN (e.g. `did:bloque:payments:uuid`).
-   * Use while polling after a 3DS challenge.
+   * Fetch current checkout state by payment URN (e.g. `did:bloque:payments:uuid`).
+   * Use while polling after a 3DS challenge to check if the payment has been
+   * approved and the checkout moved to `paid`.
    */
-  async getStatus(paymentId: string): Promise<PaymentResponse> {
-    return this.http.get<PaymentResponse>(`/${paymentId}`);
+  async getStatus(paymentId: string): Promise<Checkout> {
+    const raw = await this.http.get<Record<string, any>>(`/${paymentId}`);
+    return toCheckout(raw);
   }
 
   private buildPaymentPayload(
