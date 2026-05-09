@@ -1,0 +1,135 @@
+# Direct Payments (Server SDK)
+
+Direct payments are **server-side** payment submissions against an existing checkout/payment URN.
+
+Use this flow when you can’t (or don’t want to) use Hosted Checkout — for example: kiosks, call centers, or a fully custom backend-driven UI.
+
+If you’re building a standard web checkout, start with Hosted Checkout instead:
+- [Getting started](/pay/guide/start/getting-started)
+- [Checkout API](/pay/guide/checkout/overview)
+
+## How it works
+
+```text
+1) Create a checkout (payment link) → you get a payment URN (did:bloque:payments:...)
+2) Submit a direct payment: card | pse | cash
+3) Handle the result:
+   - card: approved | pending | rejected (and optional 3DS data)
+   - pse: checkout_url (redirect)
+   - cash: payment_code (10-digit)
+4) Use webhooks (payment.status.updated) for finality
+```
+
+## Create a checkout (get a payment URN)
+
+```ts
+import { Bloque } from '@bloque/payments';
+
+const bloque = new Bloque({
+  mode: 'production',
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
+});
+
+const checkout = await bloque.checkout.create({
+  name: 'Order #123',
+  items: [{ name: 'T-shirt', amount: 2999, quantity: 1 }],
+  success_url: 'https://yourapp.com/success',
+});
+
+// This is the ID you use in the hosted checkout UI.
+// The URN is used for direct payments.
+console.log(checkout.id, checkout.urn);
+```
+
+## Card (direct)
+
+```ts
+const payment = await bloque.payments.create({
+  paymentUrn: checkout.urn,
+  payment: {
+    type: 'card',
+    data: {
+      cardNumber: '4111111111111111',
+      cardholderName: 'Jane Doe',
+      expiryMonth: '12',
+      expiryYear: '2028',
+      cvv: '123',
+      email: 'jane@example.com',
+      installments: 1,
+      currency: 'COP',
+      // Optional: 3DS
+      // is_three_ds: true,
+      // browser_info: {...},
+    },
+  },
+});
+
+console.log(payment.status); // approved | pending | rejected
+```
+
+### 3D Secure (card)
+
+If `payment.three_ds?.iframe` is present, render it and then poll for the final status:
+
+```ts
+if (payment.three_ds?.iframe) {
+  // Render the challenge to the user (see 3DS guide)
+  // Then poll:
+  let status = payment.status;
+  while (status === 'pending') {
+    await new Promise((r) => setTimeout(r, 3000));
+    const next = await bloque.payments.getStatus(checkout.urn);
+    status = next.status;
+  }
+}
+```
+
+See [3D Secure](/pay/guide/advanced/three-d-secure) for browser fingerprint fields.
+
+## PSE (direct)
+
+```ts
+const payment = await bloque.payments.create({
+  paymentUrn: checkout.urn,
+  payment: {
+    type: 'pse',
+    data: {
+      email: 'maria@example.com',
+      personType: 'natural',
+      documentType: 'CC',
+      documentNumber: '9876543210',
+      bankCode: '1007',
+      name: 'Maria Lopez',
+      phone: '+573001234567',
+    },
+  },
+});
+
+console.log(payment.checkout_url); // redirect URL for bank portal
+```
+
+## Cash (direct)
+
+```ts
+const payment = await bloque.payments.create({
+  paymentUrn: checkout.urn,
+  payment: {
+    type: 'cash',
+    data: {
+      email: 'carlos@example.com',
+      documentType: 'CC',
+      documentNumber: '1122334455',
+      fullName: 'Carlos Martinez',
+      phone: '+573201234567',
+    },
+  },
+});
+
+console.log(payment.payment_code); // 10-digit cash payment code
+```
+
+## Webhook finality
+
+Direct payment responses can be `pending` (especially PSE). Treat your webhook `payment.status.updated` handler as the source of truth.
+
+See [Webhooks Setup](/pay/guide/webhooks/setup).

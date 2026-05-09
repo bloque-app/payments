@@ -30,6 +30,10 @@ Acepta pagos por transferencia bancaria en Colombia a través de PSE (Pagos Segu
 - Confirmación en tiempo real o pendiente según el banco
 - Sin necesidad de tarjeta de crédito
 
+### Efectivo (`cash`)
+
+Acepta pagos en efectivo en ubicaciones autorizadas. Cuando el cliente elige efectivo, el resultado incluye un `payment_code` (10 dígitos).
+
 ## Cómo Funciona
 
 Los métodos de pago se manejan automáticamente a través del checkout alojado de Bloque. Tu flujo de integración es simple:
@@ -128,10 +132,10 @@ Puedes controlar qué métodos de pago se muestran en el checkout usando la prop
   onSuccess={handleSuccess}
 />
 
-// Ambos métodos
+// Todos los métodos
 <BloqueCheckout
   checkoutId={checkoutId}
-  paymentMethods={['card', 'pse']}
+  paymentMethods={['card', 'pse', 'cash']}
   onSuccess={handleSuccess}
 />
 ```
@@ -140,6 +144,7 @@ Puedes controlar qué métodos de pago se muestran en el checkout usando la prop
 |-------|-------------|
 | `card` | Pago con tarjeta de crédito/débito |
 | `pse` | Pago por PSE (transferencia bancaria Colombia) |
+| `cash` | Pago en efectivo (devuelve un código de pago) |
 
 :::tip
 Si no especificas `paymentMethods`, por defecto solo se mostrará el pago con tarjeta (`['card']`).
@@ -168,6 +173,13 @@ Los pagos con tarjeta pueden activar autenticación 3D Secure (3DS) para segurid
 :::info
 Los pagos por PSE pueden quedar en estado `pending` mientras el banco procesa la transferencia. Usa webhooks para recibir la confirmación final del pago.
 :::
+
+## Flujo de Pago en Efectivo
+
+1. Usuario selecciona efectivo en el checkout alojado
+2. El checkout devuelve un `payment_code`
+3. El cliente completa el pago en una ubicación autorizada
+4. Tu webhook recibe `payment.status.updated` cuando cambia el estado
 
 ## Manejando Respuestas de Pago
 

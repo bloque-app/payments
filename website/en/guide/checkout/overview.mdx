@@ -1,6 +1,10 @@
 # Checkout API
 
-The Checkout API allows you to create hosted payment pages for your customers.
+The Checkout API lets you create payment links (hosted checkout pages) for your customers.
+
+There are two checkout types:
+- **Shopping cart** (`payment_type: 'shopping_cart'`): one-time purchase with one or more items
+- **Subscription** (`payment_type: 'subscription'`): recurring billing on a cron schedule
 
 ## Creating a Checkout
 
@@ -34,6 +38,24 @@ console.log('Client Secret:', checkout.client_secret);
 // Redirect customer to checkout.url or pass id + client_secret to frontend
 ```
 
+## Subscriptions (recurring)
+
+To create a subscription checkout, set `payment_type: 'subscription'` and include a `subscription` object.
+
+```ts
+const checkout = await bloque.checkout.create({
+  name: 'Premium (monthly)',
+  payment_type: 'subscription',
+  items: [{ name: 'Premium', amount: 1999, quantity: 1 }],
+  subscription: {
+    type: 'cron',
+    cron: '0 0 1 * *', // every month
+    startDate: new Date().toISOString(),
+  },
+  success_url: 'https://yourapp.com/success',
+});
+```
+
 ## Checkout Parameters
 
 ### Required Parameters
@@ -52,8 +74,12 @@ console.log('Client Secret:', checkout.client_secret);
 {
   description?: string;      // Checkout description
   image_url?: string;        // Checkout image URL
+  payment_type?: 'shopping_cart' | 'subscription';
+  subscription?: { type: 'cron'; cron: string; startDate?: string; endDate?: string };
   metadata?: Record<string, string | number | boolean>;
   expires_at?: string;       // Expiration date (ISO 8601)
+  cancel_url?: string;
+  webhook_url?: string;      // Receive payment.status.updated
 }
 ```
 
@@ -115,6 +141,18 @@ console.log('Status:', checkout.status);
 console.log('Amount:', checkout.amount_total);
 ```
 
+### Public vs authenticated retrieval
+
+- **Public**: use `retrievePublic(urlId)` for landing pages where you only need public fields.\n- **JWT/client-secret**: use `retrieve(urlId)` when you have authentication and need the full merchant view.
+
+```ts
+// Public (no auth)
+const publicCheckout = await bloque.checkout.retrievePublic(urlId);
+
+// Authenticated (requires JWT / client-secret flow)
+const authedCheckout = await bloque.checkout.retrieve(urlId);
+```
+
 ## Canceling a Checkout
 
 Cancel an active checkout:
@@ -122,7 +160,7 @@ Cancel an active checkout:
 ```typescript
 const checkout = await bloque.checkout.cancel('checkout_123');
 
-console.log('Status:', checkout.status); // 'canceled'
+console.log('Status:', checkout.status); // 'cancelled'
 ```
 
 ## Checkout Response
@@ -134,15 +172,23 @@ console.log('Status:', checkout.status); // 'canceled'
   object: 'checkout';
   url: string;               // Payment URL
   client_secret?: string;    // Checkout-scoped JWT for browser-side auth (when using secretKey)
-  status: string;            // Checkout status
+  status: 'pending' | 'paid' | 'expired' | 'deposited' | 'cancelled';
   amount_total: number;      // Total amount
   amount_subtotal: number;   // Subtotal
-  currency: 'USD';
+  asset: string;
   items: CheckoutItem[];
+  payment_type: 'shopping_cart' | 'subscription';
+  subscription?: {
+    type: 'cron';
+    cron: string;
+    startDate?: string;
+    endDate?: string;
+    status?: 'active' | 'expired' | 'eliminated' | 'paid';
+  };
   metadata?: Metadata;
   created_at: string;
   updated_at: string;
-  expires_at: string;
+  expires_at: string | null;
 }
 ```
 

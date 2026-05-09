@@ -1,6 +1,10 @@
 # API de Checkout
 
-La API de Checkout te permite crear páginas de pago alojadas para tus clientes.
+La API de Checkout te permite crear links de pago (páginas alojadas) para tus clientes.
+
+Hay dos tipos de checkout:
+- **Carrito** (`payment_type: 'shopping_cart'`): compra única con uno o más items
+- **Suscripción** (`payment_type: 'subscription'`): cobro recurrente con programación tipo cron
 
 ## Creando un Checkout
 
@@ -34,6 +38,24 @@ console.log('Client Secret:', checkout.client_secret);
 // Redirigir cliente a checkout.url o pasar id + client_secret al frontend
 ```
 
+## Suscripciones (recurrente)
+
+Para crear un checkout de suscripción, define `payment_type: 'subscription'` e incluye un objeto `subscription`.
+
+```ts
+const checkout = await bloque.checkout.create({
+  name: 'Premium (mensual)',
+  payment_type: 'subscription',
+  items: [{ name: 'Premium', amount: 1999, quantity: 1 }],
+  subscription: {
+    type: 'cron',
+    cron: '0 0 1 * *', // cada mes
+    startDate: new Date().toISOString(),
+  },
+  success_url: 'https://tuapp.com/success',
+});
+```
+
 ## Parámetros del Checkout
 
 ### Parámetros Requeridos
@@ -52,8 +74,12 @@ console.log('Client Secret:', checkout.client_secret);
 {
   description?: string;      // Descripción del checkout
   image_url?: string;        // URL de imagen del checkout
+  payment_type?: 'shopping_cart' | 'subscription';
+  subscription?: { type: 'cron'; cron: string; startDate?: string; endDate?: string };
   metadata?: Record<string, string | number | boolean>;
   expires_at?: string;       // Fecha de expiración (ISO 8601)
+  cancel_url?: string;
+  webhook_url?: string;      // Recibir payment.status.updated
 }
 ```
 
@@ -115,6 +141,18 @@ console.log('Estado:', checkout.status);
 console.log('Monto:', checkout.amount_total);
 ```
 
+### Recuperación pública vs autenticada
+
+- **Pública**: usa `retrievePublic(urlId)` para páginas públicas donde solo necesitas campos públicos.\n- **JWT/client-secret**: usa `retrieve(urlId)` cuando tienes autenticación y necesitas la vista completa.
+
+```ts
+// Pública (sin auth)
+const publicCheckout = await bloque.checkout.retrievePublic(urlId);
+
+// Autenticada (requiere JWT / client-secret)
+const authedCheckout = await bloque.checkout.retrieve(urlId);
+```
+
 ## Cancelar un Checkout
 
 Cancelar un checkout activo:
@@ -122,7 +160,7 @@ Cancelar un checkout activo:
 ```typescript
 const checkout = await bloque.checkout.cancel('checkout_123');
 
-console.log('Estado:', checkout.status); // 'canceled'
+console.log('Estado:', checkout.status); // 'cancelled'
 ```
 
 ## Respuesta del Checkout
@@ -134,15 +172,23 @@ console.log('Estado:', checkout.status); // 'canceled'
   object: 'checkout';
   url: string;               // URL de pago
   client_secret?: string;    // JWT con alcance de checkout para auth en navegador (al usar secretKey)
-  status: string;            // Estado del checkout
+  status: 'pending' | 'paid' | 'expired' | 'deposited' | 'cancelled';
   amount_total: number;      // Monto total
   amount_subtotal: number;   // Subtotal
-  currency: 'USD';
+  asset: string;
   items: CheckoutItem[];
+  payment_type: 'shopping_cart' | 'subscription';
+  subscription?: {
+    type: 'cron';
+    cron: string;
+    startDate?: string;
+    endDate?: string;
+    status?: 'active' | 'expired' | 'eliminated' | 'paid';
+  };
   metadata?: Metadata;
   created_at: string;
   updated_at: string;
-  expires_at: string;
+  expires_at: string | null;
 }
 ```
 
