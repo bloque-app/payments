@@ -17,6 +17,7 @@ export type {
   ListCheckoutParams,
   PayeerInfo,
   PaymentType,
+  SubscriptionAllocation,
   SubscriptionConfig,
   SubscriptionStatus,
   TaxInfo,
@@ -50,3 +51,8 @@ export type {
   PsePaymentFormData,
   ThreeDSData,
 } from './types/payment';
+
+export type {
+  CancelDirectSubscriptionOutput,
+  CancelSubscriptionStatus,
+} from './types/subscription';

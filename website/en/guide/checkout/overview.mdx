@@ -56,6 +56,32 @@ const checkout = await bloque.checkout.create({
 });
 ```
 
+### Subscription (advanced)
+
+The subscription schedule supports additional optional fields:
+
+- **`allocations`**: variable per-occurrence amounts (e.g. trial at $0 then normal price)\n- **`trial_days`**: delay the first charge by N days\n- **`timezone`**: interpret the cron in an IANA timezone (recommended for monthly billing)\n- **`max_occurrences`**: hard cap on generated occurrences
+
+```ts
+const checkout = await bloque.checkout.create({
+  name: 'Premium (monthly)',
+  payment_type: 'subscription',
+  items: [{ name: 'Premium', amount: 1999, quantity: 1 }],
+  subscription: {
+    type: 'cron',
+    cron: '0 0 1 * *',
+    timezone: 'America/Bogota',
+    trial_days: 14,
+    max_occurrences: 24,
+    allocations: [
+      { amount_cents: 0, currency: 'COP/2' },
+      { amount_cents: 1999, currency: 'COP/2' },
+    ],
+  },
+  success_url: 'https://yourapp.com/success',
+});
+```
+
 ## Checkout Parameters
 
 ### Required Parameters
@@ -75,7 +101,16 @@ const checkout = await bloque.checkout.create({
   description?: string;      // Checkout description
   image_url?: string;        // Checkout image URL
   payment_type?: 'shopping_cart' | 'subscription';
-  subscription?: { type: 'cron'; cron: string; startDate?: string; endDate?: string };
+  subscription?: {
+    type: 'cron';
+    cron: string;
+    startDate?: string;
+    endDate?: string;
+    allocations?: { amount_cents: number; currency: string }[];
+    trial_days?: number;
+    timezone?: string;
+    max_occurrences?: number;
+  };
   metadata?: Record<string, string | number | boolean>;
   expires_at?: string;       // Expiration date (ISO 8601)
   cancel_url?: string;

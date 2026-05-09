@@ -133,3 +133,48 @@ console.log(payment.payment_code); // 10-digit cash payment code
 Direct payment responses can be `pending` (especially PSE). Treat your webhook `payment.status.updated` handler as the source of truth.
 
 See [Webhooks Setup](/pay/guide/webhooks/setup).
+
+## Cancel a subscription (recurring card)
+
+If you created a **recurring subscription via direct card payments** (a payment with `payment_type: 'subscription'`), you can cancel future occurrences from your backend using the SDK helper:
+
+- `bloque.payments.cancelSubscription(paymentUrn)`
+
+This endpoint is **idempotent**:
+- calling twice returns `already_cancelled`
+- if the graph already ended, it returns `graph_done`
+- in-flight occurrences are **not interrupted** (they settle naturally)
+
+### SDK example
+
+```ts
+const result = await bloque.payments.cancelSubscription(
+  'did:bloque:payments:123e4567-e89b-12d3-a456-426614174000',
+);
+console.log(result.status, result.cursor);
+```
+
+### Request (curl)
+
+```bash
+curl -X POST \
+  "https://api.bloque.app/api/payments/subscriptions/did:bloque:payments:.../cancel" \
+  -H "Authorization: Bearer $BLOQUE_JWT" \
+  -H "Content-Type: application/json"
+```
+
+### Response
+
+```json
+{
+  "status": "cancellation_pending",
+  "cursor": 3,
+  "payment_urn": "did:bloque:payments:...",
+  "order_id": "order_...",
+  "graph_id": "graph_..."
+}
+```
+
+::::info
+Prefer the SDK helper from your backend: `bloque.payments.cancelSubscription(paymentUrn)`. The HTTP endpoint shown above is what the SDK calls under the hood.
+::::
