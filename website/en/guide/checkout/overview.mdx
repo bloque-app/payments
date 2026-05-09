@@ -80,8 +80,60 @@ const checkout = await bloque.checkout.create({
   expires_at?: string;       // Expiration date (ISO 8601)
   cancel_url?: string;
   webhook_url?: string;      // Receive payment.status.updated
+  payout_route?: PayoutRoute[]; // Advanced: route funds to one or more destinations
 }
 ```
+
+## Advanced: `payout_route` (routing funds)
+
+`payout_route` defines **where the funds go** after a payment is completed. You can route:
+- A **fixed** amount to a destination, or
+- A **percentage** of the total to a destination
+
+Each destination is a discriminated union called `route` (by `network`):
+- `polygon`, `kusama`, `tron`, `bep20` (address-based)
+- `bloque` (to a Bloque `account_urn`)
+
+### Routing costs
+
+- **`network: 'bloque'`**: **$0** (no additional cost) after the payment
+- **Other networks** (`polygon`, `kusama`, `tron`, `bep20`): **$0.50 per leg**
+
+### Example (fixed + percentage)
+
+```ts
+import type { PayoutRoute } from '@bloque/payments';
+
+const checkout = await bloque.checkout.create({
+  name: 'Marketplace order #123',
+  items: [{ name: 'Order total', amount: 50000, quantity: 1 }],
+  success_url: 'https://yourapp.com/success',
+  payout_route: [
+    {
+      type: 'fixed',
+      amount: 2000,
+      route: {
+        network: 'bloque',
+        account_urn: 'did:bloque:accounts:...',
+        alias: 'Platform fee',
+      },
+    },
+    {
+      type: 'percentage',
+      percentage: 96,
+      route: {
+        network: 'polygon',
+        address: '0xabc123...',
+        alias: 'Seller',
+      },
+    },
+  ],
+});
+```
+
+::::tip
+If you’re not doing revenue splits / marketplace flows, you can ignore `payout_route`.
+::::
 
 ## Checkout Items
 

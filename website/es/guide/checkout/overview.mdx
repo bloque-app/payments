@@ -80,8 +80,60 @@ const checkout = await bloque.checkout.create({
   expires_at?: string;       // Fecha de expiración (ISO 8601)
   cancel_url?: string;
   webhook_url?: string;      // Recibir payment.status.updated
+  payout_route?: PayoutRoute[]; // Avanzado: rutar fondos a uno o más destinos
 }
 ```
+
+## Avanzado: `payout_route` (ruteo de fondos)
+
+`payout_route` define **a dónde van los fondos** después de que el pago se completa. Puedes rutear:
+- Un monto **fijo** a un destino, o
+- Un **porcentaje** del total a un destino
+
+Cada destino es un union discriminado llamado `route` (por `network`):
+- `polygon`, `kusama`, `tron`, `bep20` (por dirección)
+- `bloque` (hacia un `account_urn` de Bloque)
+
+### Costos de ruteo
+
+- **`network: 'bloque'`**: **$0** (sin costo adicional) después del pago
+- **Otras redes** (`polygon`, `kusama`, `tron`, `bep20`): **$0.50 por “leg”**
+
+### Ejemplo (fijo + porcentaje)
+
+```ts
+import type { PayoutRoute } from '@bloque/payments';
+
+const checkout = await bloque.checkout.create({
+  name: 'Orden marketplace #123',
+  items: [{ name: 'Total orden', amount: 50000, quantity: 1 }],
+  success_url: 'https://tuapp.com/success',
+  payout_route: [
+    {
+      type: 'fixed',
+      amount: 2000,
+      route: {
+        network: 'bloque',
+        account_urn: 'did:bloque:accounts:...',
+        alias: 'Fee plataforma',
+      },
+    },
+    {
+      type: 'percentage',
+      percentage: 96,
+      route: {
+        network: 'polygon',
+        address: '0xabc123...',
+        alias: 'Seller',
+      },
+    },
+  ],
+});
+```
+
+::::tip
+Si no estás haciendo revenue splits / marketplace, puedes ignorar `payout_route`.
+::::
 
 ## Items del Checkout
 
