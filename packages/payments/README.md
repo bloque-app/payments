@@ -140,7 +140,7 @@ type Checkout = {
   object: 'checkout';
   url: string;
   client_secret: string;   // scoped JWT for browser-side checkout
-  status: 'pending' | 'completed' | 'expired' | 'canceled';
+  status: 'pending' | 'paid' | 'expired' | 'deposited' | 'cancelled';
   amount_total: number;
   amount_subtotal: number;
   asset: 'COPM/2' | 'DUSD/6';
@@ -176,11 +176,11 @@ const checkout = await bloque.checkout.cancel('checkout_123');
 
 #### `bloque.payments.create(params)`
 
-Current supported submit payload is card:
+Supported direct payment methods are `card`, `pse`, and `cash` (maps to `POST /payments/:type` on the server).
 
 ```ts
 const payment = await bloque.payments.create({
-  checkoutId: 'checkout_123',
+  paymentUrn: 'did:bloque:payments:123e4567-e89b-12d3-a456-426614174000',
   payment: {
     type: 'card',
     data: {
@@ -190,6 +190,8 @@ const payment = await bloque.payments.create({
       expiryYear: '2028',
       cvv: '123',
       email: 'john@example.com',
+      installments: 1,
+      currency: 'COP',
     },
   },
 });
@@ -201,11 +203,10 @@ Payment response:
 type PaymentResponse = {
   id: string;
   object: 'payment';
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'approved' | 'rejected' | 'pending';
   amount: number;
   currency: string;
   created_at: string;
-  updated_at: string;
   three_ds?: { current_step: string; iframe: string };
 };
 ```
@@ -266,7 +267,7 @@ if (payment.three_ds?.iframe) {
   // 4) Show Mastercard ID Check branding before/around the challenge where required
   // 5) Poll until terminal state:
   let status = payment.status;
-  while (status === 'pending' || status === 'processing') {
+  while (status === 'pending') {
     await new Promise((r) => setTimeout(r, 3000));
     const next = await bloque.payments.getStatus(payment.id);
     status = next.status;

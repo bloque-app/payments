@@ -10,6 +10,7 @@ import type {
   PsePaymentFormData,
   PsePaymentPayload,
 } from '../types/payment';
+import type { CancelDirectSubscriptionOutput } from '../types/subscription';
 import { BaseResource } from './base';
 import { toCheckout } from './checkout';
 
@@ -90,6 +91,22 @@ export class PaymentResource extends BaseResource {
   async getStatus(paymentId: string): Promise<Checkout> {
     const raw = await this.http.get<Record<string, any>>(`/${paymentId}`);
     return toCheckout(raw);
+  }
+
+  /**
+   * Cancel a recurring subscription created via direct card subscriptions.
+   * Maps to `POST /subscriptions/:payment_urn/cancel` on the server.
+   *
+   * This endpoint is idempotent and does not interrupt in-flight occurrences.
+   *
+   * @param paymentUrn - The subscription payment URN (`did:bloque:payments:...`).
+   */
+  async cancelSubscription(
+    paymentUrn: string,
+  ): Promise<CancelDirectSubscriptionOutput> {
+    return this.http.post<CancelDirectSubscriptionOutput>(
+      `/subscriptions/${paymentUrn}/cancel`,
+    );
   }
 
   private buildPaymentPayload(

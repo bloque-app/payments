@@ -6,6 +6,17 @@ export type PaymentType = 'shopping_cart' | 'subscription';
 export type SubscriptionStatus = 'active' | 'expired' | 'eliminated' | 'paid';
 
 /**
+ * Per-occurrence amount allocation for subscriptions.
+ * When provided, the recurring template can use variable amounts per period.
+ */
+export interface SubscriptionAllocation {
+  /** Amount in cents (or the smallest currency unit for the given currency). */
+  amount_cents: number;
+  /** Asset-format string (e.g. `"USD/2"`, `"COP/2"`, `"DUSD/6"`). */
+  currency: string;
+}
+
+/**
  * Cron-based subscription schedule. Required when `payment_type` is `subscription`.
  */
 export interface SubscriptionConfig {
@@ -17,6 +28,25 @@ export interface SubscriptionConfig {
   /** ISO 8601 end date. */
   endDate?: string;
   status?: SubscriptionStatus;
+  /**
+   * Per-occurrence allocations. If omitted, the server will reuse the checkout's
+   * amount/asset for every occurrence.
+   */
+  allocations?: SubscriptionAllocation[];
+  /**
+   * Days after `startDate` before the first charge fires.
+   * Useful for trials.
+   */
+  trial_days?: number;
+  /**
+   * IANA timezone (e.g. `"America/Bogota"`) used to interpret the cron.
+   * If omitted, defaults to UTC.
+   */
+  timezone?: string;
+  /**
+   * Hard cap on number of generated occurrences.
+   */
+  max_occurrences?: number;
 }
 
 export interface TaxInfo {

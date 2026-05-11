@@ -6,7 +6,7 @@ Official payment processing libraries for Bloque.
 
 This monorepo contains the following packages:
 
-- **[@bloque/payments](./packages/payments-sdk)** - SDK for creating and managing payments and checkouts
+- **[@bloque/payments](./packages/payments)** - SDK for creating and managing payments and checkouts
 - **[@bloque/payments-core](./packages/payments-core)** - Core utilities and types
 - **[@bloque/payments-react](./packages/payments-react)** - React wrapper for payment components
 

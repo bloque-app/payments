@@ -2,7 +2,7 @@
 
 import { PackageManagerTabs } from '@theme';
 
-Comienza a usar Bloque Payments en minutos. Esta guía te llevará a través de la configuración tanto del componente React en el frontend como del SDK en el backend.
+Envía tu primer pago end-to-end (servidor + frontend + webhook) en minutos.
 
 ## Instalación
 
@@ -48,9 +48,10 @@ Tu **secret key** (`sk_live_...`) nunca debe exponerse en código del lado del c
 5. Usuario completa el pago (con 3D Secure si es requerido)
    ↓
 6. Se disparan callbacks onSuccess/onError/onPending
+7. Tu webhook recibe payment.status.updated para finalización
 ```
 
-## Inicio Rápido: Integración Completa
+## Inicio Rápido: Integración Completa (Checkout Alojado)
 
 Aquí hay un ejemplo completo que muestra cómo integrar Bloque Payments con React en el frontend y Node.js/Bun en el backend.
 
@@ -74,6 +75,7 @@ const bloque = new Bloque({
 // Endpoint de checkout
 app.post('/api/create-checkout', async (req, res) => {
   try {
+    // 1) Crear un checkout (link de pago)
     const checkout = await bloque.checkout.create({
       name: 'Mi Producto',
       description: 'Descripción del producto',
@@ -87,7 +89,7 @@ app.post('/api/create-checkout', async (req, res) => {
       success_url: 'https://tuapp.com/success',
     });
 
-    // Devolver checkout id y client secret al frontend
+    // 2) Devolver checkoutId + clientSecret al frontend
     res.json({
       id: checkout.id,
       url: checkout.url,
@@ -128,6 +130,8 @@ function CheckoutPage({ checkoutId, clientSecret }: CheckoutPageProps) {
     <BloqueCheckout
       checkoutId={checkoutId}
       clientSecret={clientSecret}
+      // Opcional: limitar tabs de pago visibles en el checkout alojado
+      paymentMethods={['card', 'pse', 'cash']}
       appearance={{
         primaryColor: '#10b981',
         borderRadius: '12px',
@@ -135,6 +139,10 @@ function CheckoutPage({ checkoutId, clientSecret }: CheckoutPageProps) {
       onSuccess={(data) => {
         console.log('¡Pago exitoso!', data.payment_id);
         window.location.href = '/success';
+      }}
+      onPending={(data) => {
+        console.log('Pago pendiente:', data.payment_id);
+        // Común en PSE: trata como pendiente hasta finalización por webhook
       }}
       onError={(error) => {
         console.error('Pago fallido:', error);
@@ -145,6 +153,12 @@ function CheckoutPage({ checkoutId, clientSecret }: CheckoutPageProps) {
 
 export default CheckoutPage;
 ```
+
+## Webhook (Recomendado)
+
+Para estado final confiable (especialmente métodos asíncronos como PSE), configura un webhook y maneja el evento `payment.status.updated`.
+
+Ver [Configuración de Webhooks](/pay/guide/webhooks/setup).
 
 ## Variables de Entorno
 
@@ -206,6 +220,12 @@ const bloque = new Bloque({
 | `onThreeDSChallenge` | `function` | No | Llamado cuando inicia un challenge 3D Secure |
 | `appearance` | `AppearanceConfig` | No | Personalización de UI |
 | `iframeStyles` | `Record<string, string>` | No | Estilos personalizados del iframe |
+
+## Cuándo usar Pagos Directos
+
+Checkout Alojado es la integración recomendada. Usa **Pagos Directos** (solo servidor) cuando necesites enviar card/PSE/cash desde tu backend.
+
+Ver [Pagos Directos](/pay/guide/payments/direct-payments).
 
 ### Configuración de Apariencia
 

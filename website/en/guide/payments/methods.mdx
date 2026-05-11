@@ -30,6 +30,10 @@ Accept bank transfer payments in Colombia through PSE (Pagos Seguros en Línea).
 - Real-time or pending confirmation depending on the bank
 - No credit card required
 
+### Cash (`cash`)
+
+Accept cash payments at authorized locations. When the customer chooses cash, the payment result includes a `payment_code` (10-digit).
+
 ## How It Works
 
 Payment methods are handled automatically through Bloque's hosted checkout. Your integration flow is simple:
@@ -109,7 +113,7 @@ function CheckoutPage({ checkoutId, clientSecret }: CheckoutPageProps) {
 }
 ```
 
-## Filter Payment Methods
+## Filter Payment Methods (Hosted Checkout UI)
 
 You can control which payment methods are displayed in the checkout using the `paymentMethods` prop:
 
@@ -128,10 +132,10 @@ You can control which payment methods are displayed in the checkout using the `p
   onSuccess={handleSuccess}
 />
 
-// Both methods
+// All methods
 <BloqueCheckout
   checkoutId={checkoutId}
-  paymentMethods={['card', 'pse']}
+  paymentMethods={['card', 'pse', 'cash']}
   onSuccess={handleSuccess}
 />
 ```
@@ -140,6 +144,7 @@ You can control which payment methods are displayed in the checkout using the `p
 |-------|-------------|
 | `card` | Credit/debit card payment |
 | `pse` | PSE payment (bank transfer Colombia) |
+| `cash` | Cash payment (returns a payment code) |
 
 :::tip
 If you don't specify `paymentMethods`, only card payment will be shown by default (`['card']`).
@@ -168,6 +173,13 @@ Card payments may trigger 3D Secure (3DS) authentication for additional security
 :::info
 PSE payments may remain in `pending` status while the bank processes the transfer. Use webhooks to receive the final payment confirmation.
 :::
+
+## Cash Payment Flow
+
+1. User selects cash payment in hosted checkout
+2. The checkout returns a `payment_code`
+3. Customer completes payment at an authorized location
+4. Your webhook receives `payment.status.updated` when the status changes
 
 ## Handling Payment Responses
 

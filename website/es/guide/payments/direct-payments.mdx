@@ -1,0 +1,178 @@
+# Pagos Directos (SDK de Servidor)
+
+Los pagos directos son envíos de pago **del lado del servidor** contra un checkout/pago existente (URN).
+
+Usa este flujo cuando no puedas (o no quieras) usar Checkout Alojado — por ejemplo: kioskos, call centers, o una UI propia controlada por backend.
+
+Si estás construyendo un checkout web estándar, empieza por Checkout Alojado:
+- [Comenzando](/pay/guide/start/getting-started)
+- [API de Checkout](/pay/guide/checkout/overview)
+
+## Cómo funciona
+
+```text
+1) Crear un checkout (link de pago) → obtienes un payment URN (did:bloque:payments:...)
+2) Enviar un pago directo: card | pse | cash
+3) Manejar el resultado:
+   - card: approved | pending | rejected (y opcionalmente data de 3DS)
+   - pse: checkout_url (redirigir)
+   - cash: payment_code (10 dígitos)
+4) Usa webhooks (payment.status.updated) para finalización
+```
+
+## Crear un checkout (obtener un payment URN)
+
+```ts
+import { Bloque } from '@bloque/payments';
+
+const bloque = new Bloque({
+  mode: 'production',
+  secretKey: process.env.BLOQUE_SECRET_KEY!,
+});
+
+const checkout = await bloque.checkout.create({
+  name: 'Orden #123',
+  items: [{ name: 'Camiseta', amount: 2999, quantity: 1 }],
+  success_url: 'https://tuapp.com/success',
+});
+
+// Este ID se usa en el UI del checkout alojado.
+// El URN se usa para pagos directos.
+console.log(checkout.id, checkout.urn);
+```
+
+## Tarjeta (directo)
+
+```ts
+const payment = await bloque.payments.create({
+  paymentUrn: checkout.urn,
+  payment: {
+    type: 'card',
+    data: {
+      cardNumber: '4111111111111111',
+      cardholderName: 'Jane Doe',
+      expiryMonth: '12',
+      expiryYear: '2028',
+      cvv: '123',
+      email: 'jane@example.com',
+      installments: 1,
+      currency: 'COP',
+      // Opcional: 3DS
+      // is_three_ds: true,
+      // browser_info: {...},
+    },
+  },
+});
+
+console.log(payment.status); // approved | pending | rejected
+```
+
+### 3D Secure (tarjeta)
+
+Si `payment.three_ds?.iframe` está presente, renderízalo y luego haz polling para el estado final:
+
+```ts
+if (payment.three_ds?.iframe) {
+  let status = payment.status;
+  while (status === 'pending') {
+    await new Promise((r) => setTimeout(r, 3000));
+    const next = await bloque.payments.getStatus(checkout.urn);
+    status = next.status;
+  }
+}
+```
+
+Ver [3D Secure](/pay/guide/advanced/three-d-secure) para los campos de fingerprint del navegador.
+
+## PSE (directo)
+
+```ts
+const payment = await bloque.payments.create({
+  paymentUrn: checkout.urn,
+  payment: {
+    type: 'pse',
+    data: {
+      email: 'maria@example.com',
+      personType: 'natural',
+      documentType: 'CC',
+      documentNumber: '9876543210',
+      bankCode: '1007',
+      name: 'Maria Lopez',
+      phone: '+573001234567',
+    },
+  },
+});
+
+console.log(payment.checkout_url); // URL para redirección al banco
+```
+
+## Efectivo (directo)
+
+```ts
+const payment = await bloque.payments.create({
+  paymentUrn: checkout.urn,
+  payment: {
+    type: 'cash',
+    data: {
+      email: 'carlos@example.com',
+      documentType: 'CC',
+      documentNumber: '1122334455',
+      fullName: 'Carlos Martinez',
+      phone: '+573201234567',
+    },
+  },
+});
+
+console.log(payment.payment_code); // Código de pago en efectivo (10 dígitos)
+```
+
+## Finalidad vía webhooks
+
+Las respuestas de pagos directos pueden quedar en `pending` (especialmente PSE). Trata tu handler de `payment.status.updated` como fuente de verdad.
+
+Ver [Configuración de Webhooks](/pay/guide/webhooks/setup).
+
+## Cancelar una suscripción (tarjeta recurrente)
+
+Si creaste una **suscripción recurrente vía pagos directos con tarjeta** (un pago con `payment_type: 'subscription'`), puedes cancelar ocurrencias futuras desde tu backend usando el helper del SDK:
+
+- `bloque.payments.cancelSubscription(paymentUrn)`
+
+Este endpoint es **idempotente**:
+- llamar dos veces devuelve `already_cancelled`
+- si el grafo ya terminó, devuelve `graph_done`
+- ocurrencias “en vuelo” **no se interrumpen** (se liquidan naturalmente)
+
+### Ejemplo (SDK)
+
+```ts
+const result = await bloque.payments.cancelSubscription(
+  'did:bloque:payments:123e4567-e89b-12d3-a456-426614174000',
+);
+console.log(result.status, result.cursor);
+```
+
+### Request (curl)
+
+```bash
+curl -X POST \
+  "https://api.bloque.app/api/payments/subscriptions/did:bloque:payments:.../cancel" \
+  -H "Authorization: Bearer $BLOQUE_JWT" \
+  -H "Content-Type: application/json"
+```
+
+### Respuesta
+
+```json
+{
+  "status": "cancellation_pending",
+  "cursor": 3,
+  "payment_urn": "did:bloque:payments:...",
+  "order_id": "order_...",
+  "graph_id": "graph_..."
+}
+```
+
+::::info
+Prefiere el helper del SDK desde tu backend: `bloque.payments.cancelSubscription(paymentUrn)`. El endpoint HTTP anterior es lo que el SDK llama internamente.
+::::

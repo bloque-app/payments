@@ -2,7 +2,7 @@
 
 import { PackageManagerTabs } from '@theme';
 
-Get up and running with Bloque Payments in minutes. This guide will walk you through setting up both the frontend React component and the backend SDK.
+Ship your first payment end-to-end (server + frontend + webhook) in minutes.
 
 ## Installation
 
@@ -48,9 +48,10 @@ Your **secret key** (`sk_live_...`) must never be exposed in client-side code. I
 5. User completes payment (with 3D Secure if required)
    ↓
 6. onSuccess/onError/onPending callbacks are triggered
+7. Your webhook receives payment.status.updated for finality
 ```
 
-## Quick Start: Complete Integration
+## Quick Start: Complete Integration (Hosted Checkout)
 
 Here's a complete example showing how to integrate Bloque Payments with React on the frontend and Node.js/Bun on the backend.
 
@@ -74,6 +75,7 @@ const bloque = new Bloque({
 // Checkout endpoint
 app.post('/api/create-checkout', async (req, res) => {
   try {
+    // 1) Create a checkout (payment link)
     const checkout = await bloque.checkout.create({
       name: 'My Product',
       description: 'Product description',
@@ -87,7 +89,7 @@ app.post('/api/create-checkout', async (req, res) => {
       success_url: 'https://yourapp.com/success',
     });
 
-    // Return both checkout id and client secret to the frontend
+    // 2) Return checkoutId + clientSecret to the frontend
     res.json({
       id: checkout.id,
       url: checkout.url,
@@ -128,6 +130,8 @@ function CheckoutPage({ checkoutId, clientSecret }: CheckoutPageProps) {
     <BloqueCheckout
       checkoutId={checkoutId}
       clientSecret={clientSecret}
+      // Optional: limit payment tabs shown in the hosted checkout UI
+      paymentMethods={['card', 'pse', 'cash']}
       appearance={{
         primaryColor: '#10b981',
         borderRadius: '12px',
@@ -135,6 +139,10 @@ function CheckoutPage({ checkoutId, clientSecret }: CheckoutPageProps) {
       onSuccess={(data) => {
         console.log('Payment successful!', data.payment_id);
         window.location.href = '/success';
+      }}
+      onPending={(data) => {
+        console.log('Payment pending:', data.payment_id);
+        // Common for PSE: treat as pending until webhook finality
       }}
       onError={(error) => {
         console.error('Payment failed:', error);
@@ -145,6 +153,12 @@ function CheckoutPage({ checkoutId, clientSecret }: CheckoutPageProps) {
 
 export default CheckoutPage;
 ```
+
+## Webhook (Recommended)
+
+For reliable final status (especially for asynchronous methods like PSE), set up a webhook endpoint and handle the `payment.status.updated` event.
+
+See [Webhooks Setup](/pay/guide/webhooks/setup).
 
 ## Environment Variables
 
@@ -206,6 +220,12 @@ const bloque = new Bloque({
 | `onThreeDSChallenge` | `function` | No | Called when a 3D Secure challenge starts |
 | `appearance` | `AppearanceConfig` | No | UI customization |
 | `iframeStyles` | `Record<string, string>` | No | Custom iframe styles |
+
+## When to use Direct Payments
+
+Hosted Checkout is the recommended integration. Use **Direct Payments** (server-side) when you need to submit card/PSE/cash from your backend.
+
+See [Direct Payments](/pay/guide/payments/direct-payments).
 
 ### Appearance Configuration
 
