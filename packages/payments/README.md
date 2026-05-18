@@ -87,6 +87,10 @@ const checkout = await bloque.checkout.create({
     },
   },
   payment_methods: ['card', 'pse', 'cash'],
+  payeer: {
+    name: 'Nestor Cortina',
+    email: 'nestor@bloque.team',
+  },
 });
 
 console.log('Checkout URL:', checkout.url);

@@ -229,6 +229,10 @@ const checkout = await bloque.checkout.create({
     },
   },
   payment_methods: ['card', 'pse', 'cash'],
+  payeer: {
+    name: 'Nestor Cortina',
+    email: 'nestor@bloque.team',
+  },
   metadata: {
     user_id: '12345',
     campaign: 'summer_sale',

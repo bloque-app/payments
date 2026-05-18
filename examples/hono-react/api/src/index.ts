@@ -73,6 +73,10 @@ app.post('/api/payment-intents', async (c) => {
         },
       },
       payment_methods: ['card', 'pse'],
+      payeer: {
+        name: 'Nestor Cortina',
+        email: 'nestor@bloque.team',
+      },
       metadata: {
         source: 'hono-react-example',
       },

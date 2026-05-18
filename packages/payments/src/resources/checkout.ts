@@ -48,6 +48,10 @@ function buildMetadata(params: CheckoutParams): CheckoutParams['metadata'] {
     metadata.payment_methods = params.payment_methods;
   }
 
+  if (params.payeer) {
+    metadata.payeer = params.payeer;
+  }
+
   return Object.keys(metadata).length > 0 ? metadata : undefined;
 }
 
