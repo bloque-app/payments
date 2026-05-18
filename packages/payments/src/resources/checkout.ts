@@ -37,6 +37,20 @@ export function toCheckout(raw: Record<string, any>): Checkout {
   };
 }
 
+function buildMetadata(params: CheckoutParams): CheckoutParams['metadata'] {
+  const metadata = { ...(params.metadata ?? {}) };
+
+  if (params.merchant) {
+    metadata.merchant = params.merchant;
+  }
+
+  if (params.payment_methods && params.payment_methods.length > 0) {
+    metadata.payment_methods = params.payment_methods;
+  }
+
+  return Object.keys(metadata).length > 0 ? metadata : undefined;
+}
+
 export class CheckoutResource extends BaseResource {
   /**
    * Create a new checkout session (payment link).
@@ -67,7 +81,7 @@ export class CheckoutResource extends BaseResource {
       redirect_url: params.redirect_url,
       webhook_url: params.webhook_url,
       expires_at: params.expires_at,
-      metadata: params.metadata,
+      metadata: buildMetadata(params),
       payout_route: params.payout_route,
       tax: params.tax,
       discount_code: params.discount_code,

@@ -15,6 +15,8 @@ export type {
   CheckoutStatus,
   IdType,
   ListCheckoutParams,
+  MerchantConfig,
+  MerchantTheme,
   PayeerInfo,
   PaymentType,
   SubscriptionAllocation,

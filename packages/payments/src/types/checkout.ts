@@ -1,5 +1,6 @@
 import type { ASSETS, Metadata, PayoutRoute } from './common';
 import type { Customer } from './customer';
+import type { PaymentMethodType } from './payment';
 
 export type PaymentType = 'shopping_cart' | 'subscription';
 
@@ -70,6 +71,20 @@ export interface PayeerInfo {
   postal_code?: string;
   id_type?: IdType;
   id_number?: string;
+}
+
+export interface MerchantTheme {
+  primary: string;
+  primary_foreground: string;
+  background: string;
+  surface: string;
+  border: string;
+  input_border: string;
+}
+
+export interface MerchantConfig {
+  name: string;
+  theme: MerchantTheme;
 }
 
 export interface CreateCheckoutPayload {
@@ -215,10 +230,9 @@ export interface CheckoutParams {
   metadata?: Metadata;
 
   /**
-   * Checkout expiration date and time in ISO 8601 format.
-   * If not provided, the checkout may not expire automatically.
+   * Merchant information stored under checkout metadata.
    */
-  expires_at?: string;
+  merchant?: MerchantConfig;
 
   /**
    * Payment methods enabled for this checkout.
@@ -227,8 +241,15 @@ export interface CheckoutParams {
    *
    * @default ['card', 'pse', 'cash']
    */
-  payment_methods?: ('card' | 'pse' | 'cash')[];
+  payment_methods?: PaymentMethodType[];
 
+  /**
+   * Checkout expiration date and time in ISO 8601 format.
+   * If not provided, the checkout may not expire automatically.
+   */
+  expires_at?: string;
+
+  /**
   /**
    * Payout routes for distributing funds after payment.
    * Each route specifies a destination network and the amount or percentage to send.

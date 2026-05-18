@@ -75,6 +75,18 @@ const checkout = await bloque.checkout.create({
   ],
   success_url: 'https://bloque.app/success',
   cancel_url: 'https://bloque.app/cancel',
+  merchant: {
+    name: 'Bloque',
+    theme: {
+      primary: '#10b981',
+      primary_foreground: '#ffffff',
+      background: '#f8fafc',
+      surface: '#ffffff',
+      border: '#d1d5db',
+      input_border: '#10b98166',
+    },
+  },
+  payment_methods: ['card', 'pse', 'cash'],
 });
 
 console.log('Checkout URL:', checkout.url);
@@ -123,6 +135,18 @@ type CheckoutParams = {
   success_url: string;
   cancel_url: string;
   metadata?: Record<string, string | number | boolean>;
+  merchant?: {
+    name: string;
+    theme: {
+      primary: string;
+      primary_foreground: string;
+      background: string;
+      surface: string;
+      border: string;
+      input_border: string;
+    };
+  };
+  payment_methods?: ('card' | 'pse' | 'cash')[];
   expires_at?: string;
 };
 ```

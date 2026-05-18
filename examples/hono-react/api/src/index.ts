@@ -61,6 +61,18 @@ app.post('/api/payment-intents', async (c) => {
       ],
       success_url: 'http://localhost:3000/success',
       cancel_url: 'http://localhost:3000/cancel',
+      merchant: {
+        name: 'Bloque',
+        theme: {
+          primary: '#10b981',
+          primary_foreground: '#ffffff',
+          background: '#f8fafc',
+          surface: '#ffffff',
+          border: '#d1d5db',
+          input_border: '#10b98166',
+        },
+      },
+      payment_methods: ['card', 'pse'],
       metadata: {
         source: 'hono-react-example',
       },

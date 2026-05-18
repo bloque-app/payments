@@ -112,6 +112,18 @@ const checkout = await bloque.checkout.create({
     max_occurrences?: number;
   };
   metadata?: Record<string, string | number | boolean>;
+  merchant?: {
+    name: string;
+    theme: {
+      primary: string;
+      primary_foreground: string;
+      background: string;
+      surface: string;
+      border: string;
+      input_border: string;
+    };
+  };
+  payment_methods?: ('card' | 'pse' | 'cash')[];
   expires_at?: string;       // Fecha de expiración (ISO 8601)
   cancel_url?: string;
   webhook_url?: string;      // Recibir payment.status.updated
@@ -205,6 +217,18 @@ const checkout = await bloque.checkout.create({
     },
   ],
   success_url: 'https://tuapp.com/success?session_id={CHECKOUT_SESSION_ID}',
+  merchant: {
+    name: 'Bloque',
+    theme: {
+      primary: '#10b981',
+      primary_foreground: '#ffffff',
+      background: '#f8fafc',
+      surface: '#ffffff',
+      border: '#d1d5db',
+      input_border: '#10b98166',
+    },
+  },
+  payment_methods: ['card', 'pse', 'cash'],
   metadata: {
     user_id: '12345',
     campaign: 'summer_sale',
