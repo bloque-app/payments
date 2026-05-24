@@ -30,6 +30,11 @@ async function main() {
     ],
     success_url: 'https://bloque.app/success',
     cancel_url: 'https://bloque.app/cancel',
+    // Optional: pre-fill the payeer to lock the buyer's email (and/or name)
+    // on the hosted checkout. At least one of `name` or `email` is required
+    // when `payeer` is provided, otherwise the request fails with
+    // HTTP 400 `E_INVALID_PAYEER`.
+    // payeer: { email: 'buyer@example.com' },
   });
 
   console.log('Checkout URL:', checkout.url);

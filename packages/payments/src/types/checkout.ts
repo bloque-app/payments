@@ -58,8 +58,21 @@ export interface TaxInfo {
 
 export type IdType = 'CC' | 'NIT' | 'RUT' | 'PASSPORT' | 'DRIVER_LICENSE';
 
+/**
+ * Pre-filled payeer (buyer) details attached to a payment link.
+ *
+ * The server requires **at least one of `name` or `email`** when this
+ * object is provided; passing an otherwise-empty object fails with
+ * HTTP 400 `E_INVALID_PAYEER`.
+ *
+ * Once set, the hosted checkout locks the corresponding fields for the
+ * buyer, and direct-payment submissions whose `payee.email` / `payee.name`
+ * disagree with the preset are rejected with `E_PAYEE_EMAIL_MISMATCH` /
+ * `E_PAYEE_NAME_MISMATCH` (HTTP 400, exposed via `APIError.code`). Email
+ * comparison is case-insensitive; name is exact.
+ */
 export interface PayeerInfo {
-  name: string;
+  name?: string;
   email?: string;
   phone?: string;
   address_line1?: string;
