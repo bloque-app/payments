@@ -43,6 +43,11 @@ async function main() {
         expiryMonth: '12',
         expiryYear: '2028',
         cvv: '123',
+        // If the payment link was created with a pre-filled `payeer`, this
+        // email must match the preset (case-insensitive) or the request
+        // fails with HTTP 400 `E_PAYEE_EMAIL_MISMATCH`. Likewise,
+        // `cardholderName` is sent as `payee.name` and must match an
+        // exact preset name (`E_PAYEE_NAME_MISMATCH`).
         email: 'test@example.com',
         installments: 1,
         currency: 'COP',

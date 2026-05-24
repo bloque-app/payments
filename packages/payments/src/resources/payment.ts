@@ -34,8 +34,17 @@ export class PaymentResource extends BaseResource {
    * Process a direct payment for an existing checkout.
    * Maps to `POST /:type` on the server with `payment_urn` in the body.
    *
+   * If the checkout was created with a pre-filled `payeer`, the submitted
+   * `payee.email` and `payee.name` must match the preset stored on the
+   * payment link. Email comparison is case-insensitive; name is exact.
+   * Mismatches are rejected before the gateway is called.
+   *
    * @param params - Payment URN and payment data (card / PSE / cash).
    * @returns Payment response with status and type-specific fields.
+   * @throws {APIError} `E_PAYEE_EMAIL_MISMATCH` (HTTP 400) when the
+   *   submitted `payee.email` does not match the preset on the payment link.
+   * @throws {APIError} `E_PAYEE_NAME_MISMATCH` (HTTP 400) when the
+   *   submitted `payee.name` does not match the preset on the payment link.
    *
    * @example
    * ```typescript

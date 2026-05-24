@@ -59,9 +59,16 @@ export class CheckoutResource extends BaseResource {
   /**
    * Create a new checkout session (payment link).
    *
+   * When `params.payeer` is provided, the hosted checkout locks the
+   * corresponding fields (name and/or email) for the buyer, and any
+   * direct-payment submission against this link must match the preset —
+   * see `bloque.payments.create()` for the corresponding mismatch errors.
+   *
    * @param params - Checkout creation parameters.
    * @returns The newly created checkout.
    * @scope `payments.create`
+   * @throws {APIError} `E_INVALID_PAYEER` (HTTP 400) when `payeer` is
+   *   provided with neither `name` nor `email`.
    */
   async create(params: CheckoutParams): Promise<Checkout> {
     const paymentType = params.payment_type ?? 'shopping_cart';
