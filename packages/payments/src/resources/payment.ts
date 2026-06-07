@@ -143,7 +143,9 @@ export class PaymentResource extends BaseResource {
       exp_month: data.expiryMonth,
       exp_year: data.expiryYear,
       card_holder: data.cardholderName,
-      installments: data.installments,
+      ...(data.installments !== undefined && {
+        installments: data.installments,
+      }),
       currency: data.currency,
       payee: {
         name: data.cardholderName,

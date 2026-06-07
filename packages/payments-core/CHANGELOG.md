@@ -1,5 +1,7 @@
 # @bloque/payments-core
 
+## 0.1.8
+
 ## 0.1.4
 
 ### Patch Changes

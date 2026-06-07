@@ -1,5 +1,11 @@
 # @bloque/payments-react
 
+## 0.1.8
+
+### Patch Changes
+
+- @bloque/payments-core@0.1.8
+
 ## 0.1.4
 
 ### Patch Changes
