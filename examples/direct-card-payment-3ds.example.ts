@@ -79,7 +79,7 @@ async function main() {
     const status = await bloque.payments.getStatus(payment.id);
     console.log(`[${i + 1}/${MAX_ATTEMPTS}] status: ${status.status}`);
 
-    if (status.status === 'approved' || status.status === 'rejected') {
+    if (status.status === 'paid' || status.status === 'cancelled') {
       console.log('Terminal status reached:', JSON.stringify(status, null, 2));
       return;
     }
