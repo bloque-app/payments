@@ -1,11 +1,5 @@
 # @bloque/payments
 
-## 0.2.0
-
-### Minor Changes
-
-- c616d99: Sync SDK with payments API: payout_route on checkout create, payee preset parity (name-only enforcement), list `price` mapping, optional card installments, extended PSE id types (`CE`, `PP`), `created` checkout status, and `url` list filter.
-
 ## 0.1.4
 
 ### Patch Changes
