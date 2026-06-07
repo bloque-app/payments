@@ -21,4 +21,3 @@ export interface CancelDirectSubscriptionOutput {
   /** Underlying swap graph id. */
   graph_id: string;
 }
-

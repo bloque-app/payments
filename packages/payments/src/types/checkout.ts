@@ -283,6 +283,8 @@ export interface CheckoutParams {
 export interface ListCheckoutParams {
   status?: CheckoutStatus;
   payment_type?: 'shopping_cart' | 'subscription';
+  /** Filter by payment link URL. */
+  url?: string;
   payeer_search?: string;
   from_date?: string;
   to_date?: string;
@@ -296,6 +298,7 @@ export interface ListCheckoutParams {
  * Aligned with the server `Status` enum in the payments domain.
  */
 export type CheckoutStatus =
+  | 'created'
   | 'pending'
   | 'paid'
   | 'expired'
