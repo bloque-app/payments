@@ -66,9 +66,11 @@ export class CheckoutResource extends BaseResource {
   async create(params: CheckoutParams): Promise<Checkout> {
     const paymentType = params.payment_type ?? 'shopping_cart';
 
-    const items = params.items.map((item) => ({
+    const items = params.items.map((item, index) => ({
       name: item.name,
       amount: item.amount.toString(),
+      sku: item.sku ?? `item-${index + 1}`,
+      description: item.description ?? item.name,
       quantity: item.quantity,
       image_url: item.image_url,
     }));

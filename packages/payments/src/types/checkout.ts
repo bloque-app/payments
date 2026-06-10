@@ -143,7 +143,12 @@ export interface CheckoutItem {
   name: string;
 
   /**
-   * Optional description of the item.
+   * Stock-keeping unit. When omitted, the SDK sends `item-{n}` (1-based index).
+   */
+  sku?: string;
+
+  /**
+   * Item description. When omitted, the SDK defaults to `name`.
    */
   description?: string;
 
@@ -249,7 +254,6 @@ export interface CheckoutParams {
    */
   expires_at?: string;
 
-  /**
   /**
    * Payout routes for distributing funds after payment.
    * Each route specifies a destination network and the amount or percentage to send.

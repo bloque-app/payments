@@ -52,7 +52,7 @@ export interface CardPaymentFormData {
   expiryYear: string;
   cvv: string;
   email: string;
-  /** Number of installments (defaults to 12 on the server when omitted). */
+  /** Number of installments (defaults to 1 on the server when omitted). */
   installments?: number;
   /** Currency code (e.g. `'COP'`, `'USD'`). Determines the source asset. */
   currency: string;
