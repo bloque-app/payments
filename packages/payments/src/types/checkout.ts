@@ -112,6 +112,7 @@ export interface CreateCheckoutPayload {
   tax?: TaxInfo[];
   discount_code?: string;
   payeer?: PayeerInfo;
+  single_use?: boolean;
 }
 
 export interface CreateCheckoutResponse {
@@ -143,7 +144,12 @@ export interface CheckoutItem {
   name: string;
 
   /**
-   * Optional description of the item.
+   * Stock-keeping unit. When omitted, the SDK sends `item-{n}` (1-based index).
+   */
+  sku?: string;
+
+  /**
+   * Item description. When omitted, the SDK defaults to `name`.
    */
   description?: string;
 
@@ -250,7 +256,6 @@ export interface CheckoutParams {
   expires_at?: string;
 
   /**
-  /**
    * Payout routes for distributing funds after payment.
    * Each route specifies a destination network and the amount or percentage to send.
    */
@@ -275,6 +280,17 @@ export interface CheckoutParams {
    * Pre-filled payeer (buyer) information.
    */
   payeer?: PayeerInfo;
+
+  /**
+   * When `true`, the payment link can only be used once. After it reaches a
+   * terminal state (`paid` or `cancelled`), any further payment attempt is
+   * rejected by the server with `409 E_PAYMENT_LINK_CONSUMED`. A failed attempt
+   * moves the link to `cancelled`, so a single-use link is effectively
+   * "one attempt".
+   *
+   * @default false
+   */
+  single_use?: boolean;
 }
 
 /**
@@ -283,6 +299,8 @@ export interface CheckoutParams {
 export interface ListCheckoutParams {
   status?: CheckoutStatus;
   payment_type?: 'shopping_cart' | 'subscription';
+  /** Filter by payment link URL. */
+  url?: string;
   payeer_search?: string;
   from_date?: string;
   to_date?: string;
@@ -296,6 +314,7 @@ export interface ListCheckoutParams {
  * Aligned with the server `Status` enum in the payments domain.
  */
 export type CheckoutStatus =
+  | 'created'
   | 'pending'
   | 'paid'
   | 'expired'
@@ -371,6 +390,12 @@ export interface Checkout {
    * Metadata attached to the checkout.
    */
   metadata?: Metadata;
+
+  /**
+   * Whether the payment link is single-use. Hoisted from `metadata.single_use`.
+   * When `true`, the link cannot be paid again after reaching a terminal state.
+   */
+  single_use?: boolean;
 
   /**
    * Checkout creation timestamp in ISO 8601 format.

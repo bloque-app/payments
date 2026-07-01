@@ -23,13 +23,14 @@ export function toCheckout(raw: Record<string, any>): Checkout {
     url: raw.url ?? '',
     status: (summary?.status ?? 'pending') as CheckoutStatus,
     payment_type: raw.payment_type ?? 'shopping_cart',
-    amount_total: raw.amount ?? 0,
-    amount_subtotal: raw.amount ?? 0,
+    amount_total: raw.amount ?? raw.price ?? 0,
+    amount_subtotal: raw.amount ?? raw.price ?? 0,
     asset: raw.asset ?? raw.currency,
     customer: summary?.payeer,
     items: raw.items ?? [],
     subscription: raw.subscription,
     metadata: raw.metadata ?? undefined,
+    single_use: raw.metadata?.single_use,
     created_at: raw.created_at ?? '',
     updated_at: raw.updated_at ?? '',
     expires_at: raw.expires_at ?? null,
@@ -66,9 +67,11 @@ export class CheckoutResource extends BaseResource {
   async create(params: CheckoutParams): Promise<Checkout> {
     const paymentType = params.payment_type ?? 'shopping_cart';
 
-    const items = params.items.map((item) => ({
+    const items = params.items.map((item, index) => ({
       name: item.name,
       amount: item.amount.toString(),
+      sku: item.sku ?? `item-${index + 1}`,
+      description: item.description ?? item.name,
       quantity: item.quantity,
       image_url: item.image_url,
     }));
@@ -90,6 +93,7 @@ export class CheckoutResource extends BaseResource {
       tax: params.tax,
       discount_code: params.discount_code,
       payeer: params.payeer,
+      single_use: params.single_use,
     };
 
     if (paymentType === 'subscription' && params.subscription) {

@@ -30,9 +30,11 @@ async function main() {
     ],
     success_url: 'https://bloque.app/success',
     cancel_url: 'https://bloque.app/cancel',
+    // single_use: true, // one-time link: cannot be paid again once paid/cancelled
   });
 
   console.log('Checkout URL:', checkout.url);
+  console.log('Single use:', checkout.single_use ?? false);
 }
 
 main();

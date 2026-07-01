@@ -16,7 +16,14 @@ export interface ThreeDSData {
   iframe: string;
 }
 
-export type PayeeIdType = 'CC' | 'NIT' | 'RUT' | 'PASSPORT' | 'DRIVER_LICENSE';
+export type PayeeIdType =
+  | 'CC'
+  | 'CE'
+  | 'NIT'
+  | 'PP'
+  | 'RUT'
+  | 'PASSPORT'
+  | 'DRIVER_LICENSE';
 
 /**
  * Customer / payee information sent with a direct payment.
@@ -45,8 +52,8 @@ export interface CardPaymentFormData {
   expiryYear: string;
   cvv: string;
   email: string;
-  /** Number of installments (use `1` for a single payment). */
-  installments: number;
+  /** Number of installments (defaults to 1 on the server when omitted). */
+  installments?: number;
   /** Currency code (e.g. `'COP'`, `'USD'`). Determines the source asset. */
   currency: string;
   phone?: string;
@@ -137,7 +144,7 @@ export interface CardPaymentPayload {
   exp_month: string;
   exp_year: string;
   card_holder: string;
-  installments: number;
+  installments?: number;
   currency: string;
   is_three_ds?: boolean;
   browser_info?: BrowserInfo;
