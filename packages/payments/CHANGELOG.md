@@ -1,5 +1,13 @@
 # @bloque/payments
 
+## 0.2.1
+
+### Patch Changes
+
+- Rewire internal service dependencies and refresh the workspace lockfile so the
+  `@bloque/payments`, `@bloque/payments-core`, and `@bloque/payments-react`
+  packages resolve each other correctly at the published `0.2.x` versions.
+
 ## 0.2.0
 
 ### Minor Changes
