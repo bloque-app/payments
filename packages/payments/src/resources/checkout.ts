@@ -30,6 +30,7 @@ export function toCheckout(raw: Record<string, any>): Checkout {
     items: raw.items ?? [],
     subscription: raw.subscription,
     metadata: raw.metadata ?? undefined,
+    single_use: raw.metadata?.single_use,
     created_at: raw.created_at ?? '',
     updated_at: raw.updated_at ?? '',
     expires_at: raw.expires_at ?? null,
@@ -92,6 +93,7 @@ export class CheckoutResource extends BaseResource {
       tax: params.tax,
       discount_code: params.discount_code,
       payeer: params.payeer,
+      single_use: params.single_use,
     };
 
     if (paymentType === 'subscription' && params.subscription) {
