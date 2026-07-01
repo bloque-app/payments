@@ -112,6 +112,7 @@ export interface CreateCheckoutPayload {
   tax?: TaxInfo[];
   discount_code?: string;
   payeer?: PayeerInfo;
+  single_use?: boolean;
 }
 
 export interface CreateCheckoutResponse {
@@ -279,6 +280,17 @@ export interface CheckoutParams {
    * Pre-filled payeer (buyer) information.
    */
   payeer?: PayeerInfo;
+
+  /**
+   * When `true`, the payment link can only be used once. After it reaches a
+   * terminal state (`paid` or `cancelled`), any further payment attempt is
+   * rejected by the server with `409 E_PAYMENT_LINK_CONSUMED`. A failed attempt
+   * moves the link to `cancelled`, so a single-use link is effectively
+   * "one attempt".
+   *
+   * @default false
+   */
+  single_use?: boolean;
 }
 
 /**
@@ -378,6 +390,12 @@ export interface Checkout {
    * Metadata attached to the checkout.
    */
   metadata?: Metadata;
+
+  /**
+   * Whether the payment link is single-use. Hoisted from `metadata.single_use`.
+   * When `true`, the link cannot be paid again after reaching a terminal state.
+   */
+  single_use?: boolean;
 
   /**
    * Checkout creation timestamp in ISO 8601 format.
